@@ -650,6 +650,7 @@ async function bioELoad(r){
 }
 function bioEOff(r){delete BIO.e[r];saveBio();try{idbOp('m','readwrite',s=>s.delete('bk:'+r)).catch(()=>{})}catch(x){}}
 async function bioEOffer(r){
+  return;
   const e=encOf(r);if(BIOSKIP||!BIOSUP||!e||!KEYS[r]||bioEOn(r)||BIO.eno[r]===e.c)return;
   if(confirm('Открывать «'+r+'» отпечатком вместо пароля шифрования? Ключ сохранится только на этом телефоне.')){
     if(await bioEPut(r))say('Отпечаток для шифрования включён');
