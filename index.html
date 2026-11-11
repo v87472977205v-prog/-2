@@ -746,7 +746,7 @@ const annMark=id=>{try{localStorage.setItem('tgann',String(id))}catch(e){}};
 let annTry=0;
 function annAuto(){
   const a=ANN[ANN.length-1];if(!a||a.id<=annSeen()||$('#ann'))return;
-  if(booting||!ready||showSetup){if(annTry++<20)setTimeout(annAuto,500);return}
+  if(booting||!ready||showSetup){if(annTry++<600)setTimeout(annAuto,500);return}
   annTry=0;annView(a,false,()=>annMark(a.id));
 }
 function drawAnnList(){
