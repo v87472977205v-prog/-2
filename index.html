@@ -564,12 +564,26 @@ const BIOOK={};
 function askPass(title,type='password',init='',bio){return new Promise(res=>{
   $('#pwt').textContent=title;const i=$('#pwi');i.type=type;i.value=init;$('#pw').hidden=false;
   const bb=$('#pwb');bb.hidden=!bio;
-  const done=v=>{$('#pw').hidden=true;$('#pwo').onclick=$('#pwc').onclick=bb.onclick=null;i.onkeydown=null;i.type='password';bb.hidden=true;res(v)};
-  const tryBio=async()=>{try{if(await bio())done(BIOOK)}catch(e){}};
+  const done=v=>{gone=true;$('#pw').hidden=true;$('#pwo').onclick=$('#pwc').onclick=bb.onclick=null;i.onkeydown=null;i.type='password';bb.hidden=true;res(v)};
+  let busy=false,gone=false;
+  const tryBio=async()=>{
+    if(busy||gone)return;busy=true;
+    try{
+      for(let n=0;n<3&&!gone;n++){
+        const t0=Date.now();
+        try{if(await bio()){if(!gone)done(BIOOK)}return}
+        catch(e){
+          /* если окно отпечатка «моргнуло» и закрылось почти сразу - оно не успело открыться, пробуем снова сами */
+          if(Date.now()-t0<900&&n<2){await new Promise(r=>setTimeout(r,350));continue}
+          return;
+        }
+      }
+    }finally{busy=false}
+  };
   if(bio){bb.innerHTML=icon('finger')+'<span>Открыть отпечатком</span>';bb.onclick=tryBio}
   else setTimeout(()=>i.focus(),60);
   $('#pwo').onclick=()=>done(i.value);$('#pwc').onclick=()=>done(null);i.onkeydown=e=>{if(e.key==='Enter')done(i.value)};
-  if(bio)setTimeout(tryBio,150);
+  if(bio)setTimeout(()=>requestAnimationFrame(tryBio),450);
 })}
 const uiPrompt=(t,d='')=>askPass(t,'text',d).then(v=>v===null?'':v);
 /* ---- отпечаток пальца (WebAuthn, только на этом устройстве) ---- */
@@ -1028,7 +1042,7 @@ async function ensureKey(r){
   if(KEYS[r])return true;const e=encOf(r);if(!e)return true;
   if(!hasCrypto()){alert('Шифрование недоступно: при таком способе открытия файла браузер не даёт доступ к криптографии. Откройте файл через file:// или с хостинга.');return false}
   let bk=null;
-  const bioFn=bioEOn(r)?async()=>{try{bk=await bioELoad(r)}catch(x){bk=null}return !!bk}:undefined;
+  const bioFn=bioEOn(r)?async()=>{bk=await bioELoad(r);return !!bk}:undefined;
   const pw=await askPass('Пароль шифрования «'+r+'»','password','',bioFn);if(pw===null)return false;
   if(pw===BIOOK&&bk){KEYS[r]=bk;decAll().then(render);jlog('login','отпечаток: шифрование '+r);return true}
   try{const k=await deriveKey(pw,b64d(e.s));await aesD(k,b64d(e.c));KEYS[r]=k;decAll().then(render);setTimeout(()=>bioEOffer(r),400);return true}
