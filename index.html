@@ -2368,7 +2368,7 @@ if(S.apiId&&S.apiHash&&(S.auto||S.chat)){
   })();
 }
 show();
-try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').then(r=>{document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')r.update().catch(()=>{})})}).catch(()=>{})}catch(e){}
 </script>
 </body>
 </html>
