@@ -514,7 +514,7 @@ let repos=[],locks=[],users=[],JOUR=[],JENC=[],ORD=[],ORDIDX=new Map(),ownkey=nu
 let UNS=ld('tgun',{});
 const unAdd=(k,h)=>{UN.add(k);UNS[k]=h;sv('tgun',UNS)};
 const unDel=k=>{UN.delete(k);delete UNS[k];sv('tgun',UNS)};
-function syncUN(){UN.clear();for(const k of Object.keys(UNS)){const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===UNS[k])UN.add(k);else delete UNS[k]}sv('tgun',UNS)}
+function syncUN(){setTimeout(()=>{try{restoreKeys()}catch(e){}},0);UN.clear();for(const k of Object.keys(UNS)){const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===UNS[k])UN.add(k);else delete UNS[k]}sv('tgun',UNS)}
 let P=ld('tgmp',{sort:'new',view:'grid',repo:''}),sel=new Set(),selMode=false,booting=false,lp=false,pickMode='one';
 const SORTS={new:(a,b)=>b.date-a.date,old:(a,b)=>a.date-b.date,name:(a,b)=>a.name.localeCompare(b.name,'ru',{numeric:true}),no:(a,b)=>a.no-b.no,my:(a,b)=>{const x=ORDIDX.get(a.id),y=ORDIDX.get(b.id);return x===undefined&&y===undefined?a.date-b.date:x===undefined?1:y===undefined?-1:x-y}};
 const storageOK=(()=>{try{localStorage.setItem('_t','1');const ok=localStorage.getItem('_t')==='1';localStorage.removeItem('_t');return ok}catch(e){return false}})();
@@ -588,11 +588,9 @@ function askPass(title,type='password',init='',bio){return new Promise(res=>{
 const uiPrompt=(t,d='')=>askPass(t,'text',d).then(v=>v===null?'':v);
 /* ---- отпечаток пальца (WebAuthn, только на этом устройстве) ---- */
 let BIO=ld('tgbio',{id:'',k:{},no:{}});if(!BIO.k)BIO.k={};if(!BIO.no)BIO.no={};
-if(!BIO.e)BIO.e={};if(!BIO.eno)BIO.eno={};
+if(!BIO.e)BIO.e={};if(!BIO.eno)BIO.eno={};if(!BIO.ec)BIO.ec={};
 const saveBio=()=>sv('tgbio',BIO);
-/* замки с отпечатком закрываются при каждом запуске приложения */
-for(const k of Object.keys(UNS))if(BIO.k[k])delete UNS[k];
-sv('tgun',UNS);
+/* открытый репозиторий запоминается на этом устройстве, закрыть его можно вручную в меню */
 const BIOWEB=/^https:$/.test(location.protocol)||location.hostname==='localhost'||location.hostname==='127.0.0.1';
 const BIOSUP=!!(window.PublicKeyCredential&&navigator.credentials&&window.isSecureContext&&BIOWEB);
 let BIOSKIP=false;
@@ -645,7 +643,18 @@ async function bioELoad(r){
   if(!rec||!rec.k)return null;
   await aesD(rec.k,b64d(encOf(r).c));return rec.k;
 }
-function bioEOff(r){delete BIO.e[r];saveBio();try{idbOp('m','readwrite',s=>s.delete('bk:'+r)).catch(()=>{})}catch(x){}}
+async function restoreKeys(){
+  for(const r of Object.keys(BIO.e||{})){
+    try{
+      const e=encOf(r);if(!e||KEYS[r]||BIO.ec[r]||BIO.e[r]!==e.c)continue;
+      const rec=await idbOp('m','readonly',s=>s.get('bk:'+r));
+      if(!rec||!rec.k)continue;
+      await aesD(rec.k,b64d(e.c));KEYS[r]=rec.k;
+    }catch(x){}
+  }
+  if(files.some(f=>f.enc&&!f.dec&&KEYS[f.repo]))decAll().then(render).catch(()=>{});
+}
+function bioEOff(r){delete BIO.e[r];delete BIO.ec[r];saveBio();try{idbOp('m','readwrite',s=>s.delete('bk:'+r)).catch(()=>{})}catch(x){}}
 async function bioEOffer(r){
   const e=encOf(r);if(BIOSKIP||!BIOSUP||!e||!KEYS[r]||bioEOn(r)||BIO.eno[r]===e.c)return;
   if(confirm('Открывать «'+r+'» отпечатком вместо пароля шифрования? Ключ сохранится только на этом телефоне.')){
@@ -1044,8 +1053,8 @@ async function ensureKey(r){
   let bk=null;
   const bioFn=bioEOn(r)?async()=>{bk=await bioELoad(r);return !!bk}:undefined;
   const pw=await askPass('Пароль шифрования «'+r+'»','password','',bioFn);if(pw===null)return false;
-  if(pw===BIOOK&&bk){KEYS[r]=bk;decAll().then(render);jlog('login','отпечаток: шифрование '+r);return true}
-  try{const k=await deriveKey(pw,b64d(e.s));await aesD(k,b64d(e.c));KEYS[r]=k;decAll().then(render);setTimeout(()=>bioEOffer(r),400);return true}
+  if(pw===BIOOK&&bk){KEYS[r]=bk;if(BIO.ec[r]){delete BIO.ec[r];saveBio()}decAll().then(render);jlog('login','отпечаток: шифрование '+r);return true}
+  try{const k=await deriveKey(pw,b64d(e.s));await aesD(k,b64d(e.c));KEYS[r]=k;if(BIO.ec[r]){delete BIO.ec[r];saveBio()}decAll().then(render);setTimeout(()=>bioEOffer(r),400);return true}
   catch(x){alert('Неверный пароль шифрования');return false}
 }
 async function setRepoEnc(r,enc){
@@ -1371,7 +1380,7 @@ function openRepoMenu(r){
   if(lk)it.push(['rm','Снять пароль','unlock'])}
   if(lk&&window.PublicKeyCredential)it.push(bioOn(lk)?['bio-','Отключить отпечаток','finger']:['bio+','Включить отпечаток','finger']);
   if(encOf(r)&&window.PublicKeyCredential)it.push(bioEOn(r)?['bioe-','Отключить отпечаток для шифрования','finger']:['bioe+','Отпечаток вместо пароля шифрования','finger']);
-  if(lk&&open)it.push(['cls','Закрыть на этом устройстве','lock']);
+  if((lk&&open)||(bioEOn(r)&&KEYS[r]))it.push(['cls','Закрыть на этом устройстве','lock']);
   if(r&&!noDel(r))it.push(['del','Удалить репозиторий','trash']);
   $('#rml').innerHTML=`<div class="rt">${esc(r||'Облако')}</div>`+it.map(([a,t,ic])=>`<button data-a="${a}"${a==='del'?' class="del"':''}>${icon(ic)}${t}</button>`).join('');
   $('#rmn').hidden=false;
@@ -1389,6 +1398,10 @@ async function changeLock(r,p){
 }
 function closeRepo(r){
   for(const k of[...UN])if(k.startsWith(r+'\n'))unDel(k);
+  if(r&&bioEOn(r)){
+    BIO.ec[r]=1;saveBio();delete KEYS[r];
+    for(const f of files)if(f.repo===r&&f.enc){f.name='🔐 зашифровано';f.mime='application/octet-stream';f.dec=0}
+  }
   if(R()===r){cur='';selMode=false;sel.clear()}
   say('Закрыто на этом устройстве');render();
 }
