@@ -605,10 +605,11 @@ let fromSet=false;
 $('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки'){drawSettings();return}fromSet=false;$('#adm').hidden=true};
 function drawSettings(){
   fromSet=false;openAdm('Настройки');
-  $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div></div></div>`;
+  $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
 $('#admb').addEventListener('click',async e=>{
+  if(e.target.closest('#appupd')){(async()=>{try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(x){}location.reload()})();return}
   const b=e.target.closest('#cachex');if(!b||b.disabled)return;
   b.disabled=true;
   try{const was=await cacheReset();const el=$('#cachei');if(el)el.textContent='Пока пусто';say(was.n?'Кэш сброшен: освобождено '+size(was.size):'Кэш и так пуст')}
@@ -1140,9 +1141,9 @@ function dlRaw(f,pre){
   j.p.catch(()=>{});
   return j.p;
 }
-async function urlOf(f){
+async function urlOf(f,noDisk){
   if(!C.has(f.id)){
-    let parts,n;const raw=await cGet(f.id);
+    let parts,n;const raw=noDisk?null:await Promise.race([cGet(f.id),sleep(6000).then(()=>null)]);
     if(raw){parts=[raw];n=raw.size;WARM.add(f.id)}
     else{const r=await dlRaw(f,false);parts=r.parts;n=r.n}
     if(C.has(f.id))return C.get(f.id);
@@ -1327,19 +1328,38 @@ const saveNow=()=>{const f=pq[pi];if(f&&au.duration>0&&!au.ended){PS[f.id]=au.cu
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveNow()});
 window.addEventListener('pagehide',saveNow);
 const _pend=new Map();
-const urlOfD=f=>{if(C.has(f.id))return Promise.resolve(C.get(f.id));if(!_pend.has(f.id))_pend.set(f.id,urlOf(f).finally(()=>_pend.delete(f.id)));return _pend.get(f.id)};
+const urlOfD=(f,noDisk)=>{if(C.has(f.id))return Promise.resolve(C.get(f.id));if(!_pend.has(f.id)){const p=urlOf(f,noDisk).finally(()=>{if(_pend.get(f.id)===p)_pend.delete(f.id)});_pend.set(f.id,p)}return _pend.get(f.id)};
+/* ждём ссылку на трек, но не вечно: если загрузка не двигается 25 секунд, сообщаем и сдаёмся (дальше — повтор в обход диска) */
+function waitUrl(f,noDisk){
+  return new Promise((ok,no)=>{
+    let last=-1,t0=Date.now(),told=false,done=false;
+    const iv=setInterval(()=>{
+      const n=DLP.get(f.id)||0;if(n!==last){last=n;t0=Date.now();return}
+      const w=Date.now()-t0;
+      if(w>10000&&!told){told=true;say('Долго грузится… нажмите ▶, чтобы повторить')}
+      if(w>25000&&!done){done=true;clearInterval(iv);no(new Error('Загрузка зависла'))}
+    },2000);
+    urlOfD(f,noDisk).then(u=>{done=true;clearInterval(iv);ok(u)},e=>{done=true;clearInterval(iv);no(e)});
+  });
+}
+function retryTrack(){
+  const f=pq[pi];if(!f)return;
+  const j=DLJ.get(f.id);if(j)try{j.cancel()}catch(e){}
+  _pend.delete(f.id);playAt(pi,true,false,true);
+}
 const fmt=t=>{if(!isFinite(t))return'0:00';t=Math.floor(t);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
 let loadingTrack=false,playTok=0;
 const setPlBtn=()=>{$('#pplay').innerHTML=loadingTrack?'<svg class="i plspin" viewBox="0 0 24 24" style="width:28px;height:28px"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="36 20" stroke-linecap="round"/></svg>':au.paused?'<svg class="i" viewBox="0 0 24 24" style="fill:currentColor;width:28px;height:28px"><path d="M8 5l11 7-11 7z"/></svg>':'<svg class="i" viewBox="0 0 24 24" style="fill:currentColor;width:28px;height:28px"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>'};
 setPlBtn();
 function showPl(on){$('#pl').hidden=!on;document.body.classList.toggle('pl-on',on)}
-async function playAt(i,auto=true,resume=false){
+let loadT0=0;
+async function playAt(i,auto=true,resume=false,force=false){
   if(i<0||i>=pq.length)return;
   saveNow();
   /* Если ссылка на трек уже готова (следующий трек подготовлен заранее), включаем его в ту же долю секунды, без пауз и ожиданий:
      при выключенном экране браузер разрешает продолжить звук только сразу, в момент окончания прошлого трека. */
   const ready=pq[i]&&C.get(pq[i].id);
-  const tok=++playTok;loadingTrack=true;if(!ready)au.pause();
+  const tok=++playTok;loadingTrack=true;loadT0=Date.now();if(!ready)au.pause();
   pi=i;const f=pq[i];LASTID=f.id;sv('tglast',LASTID);if(SHUF&&pq.length>1)shSync(SH,i,pq.length);
   HOLD=false;LOADPLAY=auto;msMeta(f);bindMS();msState();
   /* листаем туда-сюда: загрузки музыки, которые уже не нужны, не должны тянуть канал */
@@ -1347,7 +1367,7 @@ async function playAt(i,auto=true,resume=false){
   pfPlan();
   showPl(true);markPlaying();setPlBtn();$('#pt').textContent=f.name;$('#pseek').value=0;$('#pcur').textContent='0:00';$('#pdur').textContent='…';
   try{
-    const u=ready||await urlOfD(f);if(tok!==playTok)return;
+    const u=ready||await waitUrl(f,force);if(tok!==playTok)return;
     const rp=resume?PS[f.id]:0;au.src=u;applySpd();if(rp>3)au.addEventListener('loadedmetadata',()=>{au.currentTime=rp},{once:true});
     if(LOADPLAY&&!HOLD)await stallP(au.play(),15000);
     failRun=0;RETRIED.delete(f.id);
@@ -1355,6 +1375,10 @@ async function playAt(i,auto=true,resume=false){
   }catch(x){
     if(tok===playTok){
       if(x&&x.name==='AbortError'){}
+      else if(!force&&x&&x.message==='Загрузка зависла'){
+        const j=DLJ.get(f.id);if(j)try{j.cancel()}catch(e){}
+        _pend.delete(f.id);setTimeout(()=>{if(tok===playTok)playAt(i,auto,resume,true)},300);
+      }
       else if(x&&x.name==='NotAllowedError')say('Нажмите ▶, чтобы продолжить');
       else{
         say('Не удалось воспроизвести: '+err(x),1);failRun++;
@@ -1416,7 +1440,7 @@ function restoreLast(auto){
   if(!q.length)return;
   pq=q;SH={o:[],p:0,len:0};showPl(true);playAt(i,auto,true);
 }
-$('#pplay').onclick=()=>{if(loadingTrack)return;if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
+$('#pplay').onclick=()=>{if(loadingTrack){if(Date.now()-loadT0>4000)retryTrack();return}if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
 $('#pprev').onclick=()=>{if(au.currentTime>3){au.currentTime=0;return}slideNav(-1)};$('#pnext').onclick=()=>slideNav(1);
 $('#prew').onclick=()=>{au.currentTime=Math.max(0,au.currentTime-10)};
 $('#pfwd').onclick=()=>{au.currentTime=Math.min(au.duration||1e9,au.currentTime+10)};
@@ -1502,7 +1526,7 @@ function stopEq(){if(eraf)cancelAnimationFrame(eraf);eraf=0}
 function expandPl(){const el=$('#pl');if(el.classList.contains('full'))return;el.classList.add('full');el.style.transform='';el.style.transition='';startEq()}
 function collapsePl(){const el=$('#pl');el.classList.remove('full');el.style.transform='';el.style.transition='';stopEq()}
 $('#pcol').onclick=collapsePl;
-$('#eq').onclick=()=>{if(loadingTrack)return;if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
+$('#eq').onclick=()=>{if(loadingTrack){if(Date.now()-loadT0>4000)retryTrack();return}if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
 $('#pt').onclick=()=>{if(!$('#pl').classList.contains('full'))expandPl()};
 window.addEventListener('resize',()=>{if($('#pl').classList.contains('full'))fitEq()});
 let fY=null,fX=0,fd=0,fm='',gdir=0,gidx=-1,sliding=false,gh=null;
