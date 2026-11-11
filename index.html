@@ -113,6 +113,10 @@ main{touch-action:pan-y}
 .del{color:var(--bad)}
 [hidden]{display:none!important}
 #st{display:none}
+.lockbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(28px + env(safe-area-inset-bottom));width:min(340px,calc(100% - 36px));height:58px;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:99px;background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 65%,#fff));color:var(--accink);font:600 17px system-ui,sans-serif;box-shadow:0 8px 24px color-mix(in srgb,var(--acc) 40%,transparent),0 2px 6px rgba(0,0,0,.4);z-index:4;cursor:pointer;transition:transform .12s}
+.lockbtn:active{transform:translateX(-50%) scale(.96)}
+.lockbtn svg{width:24px;height:24px}
+body.pl-on .lockbtn{bottom:calc(160px + env(safe-area-inset-bottom))}
 button.fab{border:0;padding:0}.fab .i{transition:transform .18s}.fab.open .i{transform:rotate(45deg)}
 #fabm{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:5}
 body.pl-on #fabm{bottom:calc(244px + env(safe-area-inset-bottom))}
@@ -540,6 +544,7 @@ function allPaths(r=R()){
   return[...s].sort((a,b)=>a.localeCompare(b,'ru'));
 }
 const R=()=>P.repo||'';
+const fabBlocked=()=>isLocked(R(),cur)||needKey(R());
 
 /* ---- пароли (защита внутри приложения) ---- */
 const lockOf=(r,p)=>locks.find(l=>l.r===r&&l.p===p);
@@ -1312,13 +1317,13 @@ function render(){
    AM=P.view==='grid'&&lst.length>0&&lst.filter(isAud).length/lst.length>=.6;GR=P.view==='grid'&&!AM}
   $('#list').className=(GR?'grid':'')+(selMode?' selm':'');
   $('#selbar').hidden=!selMode;$('#selc').textContent='Выбрано: '+sel.size;
-  $('#top').hidden=selMode;$('#fab').hidden=selMode;if(selMode)fabClose();
+  $('#top').hidden=selMode;{const fb=selMode||fabBlocked();$('#fab').hidden=fb;if(fb)fabClose()}
   const qq=$('#q').value.trim();$('#sq').hidden=!qq||selMode;$('#sqt').textContent='Поиск: «'+qq+'»';
   ORDIDX=ordIdx(R(),cur);const cmp=(P.sort==='my'&&q)?SORTS.new:(SORTS[P.sort]||SORTS.new);
   let html='';
   drawRepos();
-  if(!isLocked(R(),'')&&needKey(R())){html='<div class="empty"><span class="big">🔐</span>Репозиторий зашифрован<br><br><button class="p unk">Ввести пароль шифрования</button></div>'}
-  else if(isLocked(R(),'')){html='<div class="empty"><span class="big">🔒</span>Репозиторий защищён паролем<br><br><button class="p unl">Ввести пароль</button></div>'}
+  if(!isLocked(R(),'')&&needKey(R())){html='<div class="empty"><span class="big">🔐</span>Репозиторий зашифрован</div><button class="lockbtn unk">'+icon('lock')+'<span>Ввести пароль шифрования</span></button>'}
+  else if(isLocked(R(),'')){html='<div class="empty"><span class="big">🔒</span>Репозиторий защищён паролем</div><button class="lockbtn unl">'+icon('lock')+'<span>Ввести пароль</span></button>'}
   else if(q){
     const L=files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&(f.name.toLowerCase().includes(q)||pad(f.no).includes(q)||String(f.no)===q)).filter(ftOk).sort(cmp);
     html=L.length?L.map(f=>fileRow(f,true)).join(''):'<div class="empty"><span class="big">🔍</span>Ничего не найдено</div>';
@@ -2007,7 +2012,7 @@ $('#list').onclick=e=>{
 function paintSel(){
   $('#selbar').hidden=!selMode;$('#selc').textContent='Выбрано: '+sel.size;
   $('#sall').textContent=curList.length&&curList.every(id=>sel.has(id))?'Снять':'Все';
-  $('#top').hidden=selMode;$('#fab').hidden=selMode;if(selMode)fabClose();
+  $('#top').hidden=selMode;{const fb=selMode||fabBlocked();$('#fab').hidden=fb;if(fb)fabClose()}
   $('#sq').hidden=!$('#q').value.trim()||selMode;
   document.querySelectorAll('#list [data-o]').forEach(d=>d.classList.toggle('sel',sel.has(+d.dataset.o)));
 }
