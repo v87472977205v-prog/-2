@@ -571,13 +571,13 @@ async function jflush(){
   if(JQ.length)setTimeout(jflush,1500);
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)jflush()});
-const ACT={up:'загрузил','del':'удалил',mv:'перенёс',ren:'переименовал','rep+':'создал репозиторий','rep-':'удалил репозиторий','fo+':'создал папку','fo-':'удалил папку',login:'вошёл',view:'открыл',play:'включил',dl:'скачал',lock:'поставил пароль:',unlock:'снял пароль:',chg:'сменил пароль:',badpw:'ввёл неверный пароль:','user+':'создал профиль','user-':'удалил профиль',cp:'скопировал',enc:'шифрование:',ord:'изменил порядок файлов:',key:'создал ключ для друга',out:'вышел из аккаунта',jclr:'очистил журнал',own:'включил хранение паролей',ann:'опубликовал объявление'};
+const ACT={up:'загрузил','del':'удалил',mv:'перенёс',ren:'переименовал','rep+':'создал репозиторий','rep-':'удалил репозиторий','fo+':'создал папку','fo-':'удалил папку',login:'вошёл',view:'открыл',play:'включил',dl:'скачал',lock:'поставил пароль:',unlock:'снял пароль:',chg:'сменил пароль:',badpw:'ввёл неверный пароль:','user+':'создал профиль','user-':'удалил профиль',cp:'скопировал',enc:'шифрование:',ord:'изменил порядок файлов:',key:'создал ключ для друга',out:'вышел из аккаунта',jclr:'очистил журнал',own:'включил хранение паролей',ann:'опубликовал оповещение','ann-':'удалил оповещение'};
 function openAdm(t){$('#admt').textContent=t;$('#adm').hidden=false}
 let fromSet=false;
 $('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки'){drawSettings();return}fromSet=false;$('#adm').hidden=true};
 function drawSettings(){
   fromSet=false;openAdm('Настройки');
-  $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Объявления</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div></div></div>`;
+  $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
 $('#admb').addEventListener('click',async e=>{
@@ -608,11 +608,25 @@ function annAuto(){
   if(booting||!ready||showSetup){if(annTry++<20)setTimeout(annAuto,500);return}
   annTry=0;annView(a,false,()=>annMark(a.id));
 }
+function drawAnnList(){
+  const el=$('#annlist');if(!el)return;
+  const L=[...ANN].sort((a,b)=>b.id-a.id);
+  el.innerHTML=L.length?L.map(a=>`<div class="uc"><div class="un">Версия ${esc(a.v)} · ${esc(annDate(a.d))}</div><div class="us">${a.l.map(x=>'• '+esc(x)).join('<br>')}</div><div class="row"><button class="del" data-anndel="${a.id}">Удалить</button></div></div>`).join(''):'<div class="us">Пока ничего не опубликовано</div>';
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-anndel]');if(!b||S.viewer)return;
+  const id=+b.dataset.anndel,a=ANN.find(x=>x.id===id);if(!a||b.disabled)return;
+  if(!confirm('Удалить оповещение, версия '+a.v+'? Оно пропадёт у всех пользователей.'))return;
+  b.disabled=true;
+  try{await withChat(()=>client.deleteMessages(S.chat,[id]));ANN=ANN.filter(x=>x.id!==id);jlog('ann-',a.v);say('Оповещение удалено');drawAnnList()}
+  catch(x){say('Не удалось удалить: '+err(x),1);b.disabled=false}
+});
 function openAnn(){
   if(S.viewer)return;
-  openAdm('Объявления');
+  openAdm('Оповещения');
   const last=ANN[ANN.length-1],v=annNext(),d=annDate();
-  $('#admb').innerHTML=`<div style="padding:10px 14px"><div class="uc"><div class="un">Версия ${esc(v)} · ${esc(d)}</div><div class="us">Номер и дата подставляются сами. Напишите, что изменилось: Enter или «Следующая строка» добавляет новую строчку.</div><div id="annls"></div><div class="row"><button id="annadd">+ Следующая строка</button></div><div class="row"><button id="annprev">Посмотреть</button><button class="p" id="annpub">Опубликовать</button></div></div>${last?`<div class="us">Последнее: версия ${esc(last.v)} · ${esc(annDate(last.d))}</div>`:''}</div>`;
+  $('#admb').innerHTML=`<div style="padding:10px 14px"><div class="uc"><div class="un">Версия ${esc(v)} · ${esc(d)}</div><div class="us">Номер и дата подставляются сами. Напишите, что изменилось: Enter или «Следующая строка» добавляет новую строчку.</div><div id="annls"></div><div class="row"><button id="annadd">+ Следующая строка</button></div><div class="row"><button id="annprev">Посмотреть</button><button class="p" id="annpub">Опубликовать</button></div></div><div class="un" style="margin:4px 0 8px">Опубликованные</div><div id="annlist"></div></div>`;
+  drawAnnList();
   const box=$('#annls');
   const add=(focus)=>{const r=document.createElement('div');r.className='annl';r.innerHTML='<input type="text" placeholder="Что изменилось"><button class="del" aria-label="Убрать">✕</button>';box.appendChild(r);const i=r.querySelector('input');i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add(true)}};r.querySelector('button').onclick=()=>{if(box.children.length>1)r.remove();else i.value=''};if(focus)i.focus()};
   add(false);
@@ -621,11 +635,11 @@ function openAnn(){
   $('#annprev').onclick=()=>{const l=lines();if(!l.length){say('Напишите хотя бы одну строчку',1);return}annView({v,d:Date.now(),l},true)};
   $('#annpub').onclick=async e=>{
     const l=lines();if(!l.length){say('Напишите хотя бы одну строчку',1);return}
-    if(!confirm('Опубликовать объявление, версия '+v+'? Каждый пользователь увидит его один раз.'))return;
+    if(!confirm('Опубликовать оповещение, версия '+v+'? Каждый пользователь увидит его один раз.'))return;
     const b=e.target;b.disabled=true;
     try{
       const a={v,d:Date.now(),l},m=await withChat(()=>client.sendMessage(S.chat,AN+JSON.stringify(a)));
-      ANN.push({...a,id:m.id});annMark(m.id);jlog('ann',v);say('Объявление опубликовано');openAnn();
+      ANN.push({...a,id:m.id});annMark(m.id);jlog('ann',v);say('Оповещение опубликовано');drawAnnList();
     }catch(x){say('Не удалось опубликовать: '+err(x),1);b.disabled=false}
   };
 }
@@ -1307,7 +1321,7 @@ async function playAt(i,auto=true,resume=false){
   try{
     const u=ready||await urlOfD(f);if(tok!==playTok)return;
     const rp=resume?PS[f.id]:0;au.src=u;applySpd();if(rp>3)au.addEventListener('loadedmetadata',()=>{au.currentTime=rp},{once:true});
-    if(auto&&!HOLD)await stallP(au.play(),15000);
+    if(LOADPLAY&&!HOLD)await stallP(au.play(),15000);
     failRun=0;RETRIED.delete(f.id);
     pfPlan();
   }catch(x){
@@ -1320,7 +1334,12 @@ async function playAt(i,auto=true,resume=false){
       }
     }
   }
-  finally{if(tok===playTok){loadingTrack=false;setPlBtn();markPlaying();msState();pfRun()}}
+  finally{if(tok===playTok){loadingTrack=false;setPlBtn();markPlaying();msState();pfRun();kickPlay(tok)}}
+}
+/* трек загрузился, а стоит на паузе, хотя пауза не нажималась: включаем ещё раз (несколько попыток подряд) */
+function kickPlay(tok){
+  const k=()=>{if(tok!==playTok||loadingTrack||HOLD||!LOADPLAY)return;if(au.paused&&au.src&&!au.ended)au.play().catch(()=>{})};
+  setTimeout(k,300);setTimeout(k,1500);setTimeout(k,4000);
 }
 function startPlayer(id){{const f0=files.find(x=>x.id===id);if(f0)jonce('play',f0)}expandPl();pq=audioList();SH={o:[],p:0,len:0};playAt(pq.findIndex(f=>f.id===id))}
 let failRun=0;const RETRIED=new Map();
@@ -1369,7 +1388,7 @@ function restoreLast(auto){
   if(!q.length)return;
   pq=q;SH={o:[],p:0,len:0};showPl(true);playAt(i,auto,true);
 }
-$('#pplay').onclick=()=>{if(loadingTrack)return;au.paused?au.play().catch(()=>{}):au.pause()};
+$('#pplay').onclick=()=>{if(loadingTrack)return;if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
 $('#pprev').onclick=()=>{if(au.currentTime>3){au.currentTime=0;return}slideNav(-1)};$('#pnext').onclick=()=>slideNav(1);
 $('#prew').onclick=()=>{au.currentTime=Math.max(0,au.currentTime-10)};
 $('#pfwd').onclick=()=>{au.currentTime=Math.min(au.duration||1e9,au.currentTime+10)};
@@ -1396,7 +1415,7 @@ async function msPlay(){
   if(pi>=0&&pq[pi]&&au.src){try{await au.play()}catch(e){}return}
   restoreLast(true);                                              /* плеер был закрыт или страница перезапущена — включаем последний трек */
 }
-function msPause(){if(loadingTrack)HOLD=true;au.pause();msState()}
+function msPause(){HOLD=true;au.pause();msState()}
 function bindMS(){
   if(!('mediaSession' in navigator))return;
   const ms=navigator.mediaSession;
@@ -1453,7 +1472,7 @@ function stopEq(){if(eraf)cancelAnimationFrame(eraf);eraf=0}
 function expandPl(){const el=$('#pl');if(el.classList.contains('full'))return;el.classList.add('full');el.style.transform='';el.style.transition='';startEq()}
 function collapsePl(){const el=$('#pl');el.classList.remove('full');el.style.transform='';el.style.transition='';stopEq()}
 $('#pcol').onclick=collapsePl;
-$('#eq').onclick=()=>{if(loadingTrack)return;au.paused?au.play().catch(()=>{}):au.pause()};
+$('#eq').onclick=()=>{if(loadingTrack)return;if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
 $('#pt').onclick=()=>{if(!$('#pl').classList.contains('full'))expandPl()};
 window.addEventListener('resize',()=>{if($('#pl').classList.contains('full'))fitEq()});
 let fY=null,fX=0,fd=0,fm='',gdir=0,gidx=-1,sliding=false,gh=null;
