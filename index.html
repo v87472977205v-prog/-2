@@ -260,6 +260,34 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 #dp .secrow{display:flex;align-items:center;justify-content:space-between;padding-right:0}
 #dp #addrepo{flex:none;width:34px;height:34px;padding:0;justify-content:center;border:1px solid var(--line);border-radius:50%}
 .plspin{animation:sp 1s linear infinite}
+
+/* ---- плеер: современный вид (функции прежние) ---- */
+#pl:not(.full){background:color-mix(in srgb,var(--card) 84%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid color-mix(in srgb,var(--line) 75%,transparent);border-radius:26px;box-shadow:0 12px 36px rgba(0,0,0,.45);padding:14px 14px 8px}
+#ppr{height:3px;background:transparent}#ppr i{border-radius:0 3px 3px 0}
+#pt{font:600 15px/1.3 system-ui,sans-serif;letter-spacing:.005em}
+#pl #pclose{width:34px;height:34px;color:var(--mute)}
+#pl .pr2{gap:10px;font:500 11.5px system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+#pl #pseek{--p:0%;-webkit-appearance:none;appearance:none;height:24px;background:transparent;cursor:pointer;outline:none}
+#pseek::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:linear-gradient(to right,var(--acc) var(--p),color-mix(in srgb,var(--ink) 16%,transparent) var(--p))}
+#pseek::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;margin-top:-5px;border-radius:50%;background:var(--acc);border:0;box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 22%,transparent)}
+#pseek::-moz-range-track{height:4px;border-radius:99px;background:color-mix(in srgb,var(--ink) 16%,transparent)}
+#pseek::-moz-range-progress{height:4px;border-radius:99px;background:var(--acc)}
+#pseek::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 22%,transparent)}
+#pl .pr3{justify-content:space-between;padding:2px 4px 0}
+#pl .ib2{width:44px;height:44px;transition:background .15s,transform .1s}
+#pl .ib2:active{transform:scale(.92);background:color-mix(in srgb,var(--ink) 10%,transparent)}
+#pl .big{width:58px;height:58px;box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 40%,transparent)}
+.pr4{gap:8px;margin-top:12px}
+.pr4 button{background:transparent;border:1px solid var(--line);color:var(--mute);padding:7px 14px;font:500 12.5px system-ui,sans-serif;border-radius:99px;transition:background .15s,color .15s}
+.pr4 .on{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);border-color:transparent}
+#pl.full{background:radial-gradient(120% 55% at 50% 0%,color-mix(in srgb,var(--acc) 24%,transparent),transparent 72%),var(--bg);padding-left:26px;padding-right:26px}
+#pl.full #pcol{width:42px;height:42px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+#pl.full #pt{font-size:22px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+#pl.full .pr1{margin:14px 0 8px}
+#pl.full .pr2{margin-top:4px}
+#pl.full .pr3{margin-top:12px}
+#pl.full .ib2{width:50px;height:50px}
+#pl.full .big{width:74px;height:74px}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -1396,6 +1424,8 @@ $('#pclose').onclick=()=>{au.pause();au.removeAttribute('src');au.load();pq=[];p
 $('#pseek').addEventListener('input',()=>{seeking=true;$('#pcur').textContent=fmt(+$('#pseek').value)});
 $('#pseek').addEventListener('change',()=>{au.currentTime=+$('#pseek').value;seeking=false});
 TU.push(()=>{if(seeking)return;$('#pseek').max=au.duration||0;$('#pseek').value=au.currentTime;$('#pcur').textContent=fmt(au.currentTime)});
+const seekFill=()=>{const e=$('#pseek'),m=+e.max||0;e.style.setProperty('--p',(m?e.value/m*100:0)+'%')};
+$('#pseek').addEventListener('input',seekFill);TU.push(seekFill);
 au.addEventListener('loadedmetadata',()=>{$('#pseek').max=au.duration||0;$('#pdur').textContent=fmt(au.duration);$('#pseek').value=au.currentTime;$('#pcur').textContent=fmt(au.currentTime);$('#ppi').style.width=(au.duration?au.currentTime/au.duration*100:0)+'%'});
 function markPlaying(){
   const id=pi>=0&&pq[pi]&&!$('#pl').hidden?pq[pi].id:null;
