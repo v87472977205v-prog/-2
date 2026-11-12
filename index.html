@@ -216,13 +216,38 @@ body.pl-on #fabm{bottom:calc(244px + env(safe-area-inset-bottom))}
 .empty .big{font-size:46px;display:block;margin-bottom:6px}
 .spin{width:34px;height:34px;margin:0 auto 14px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-#setup h1{margin:10px 0 2px;font-size:26px}
-.brand{text-align:center;margin:16px 0 20px}.brand .logo{width:76px;height:76px;color:var(--acc)}
-#setup .brand h1{margin:4px 0 4px;font-size:30px;text-align:center;letter-spacing:.01em}.brand .sub{text-align:center;margin:0}
-#combo{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:15px/1.45 ui-monospace,Menlo,Consolas,monospace;resize:none;margin:4px 0}
-#cs{display:flex;gap:22px;justify-content:center;font:20px system-ui,sans-serif;color:var(--mute);margin:6px 0 10px;min-height:28px}#cs span{display:inline-block;transition:color .3s,transform .3s}#cs .ok{transform:scale(1.2)}#cs .ok{color:var(--acc)}
-#setup .sub{color:var(--mute);font:14px system-ui,sans-serif;margin:0 0 6px}
-#setup #go{width:100%;padding:13px;font-size:16px}
+#setup,#gate{--sa:#3aa89f;position:fixed;inset:0;z-index:15;overflow-y:auto;box-sizing:border-box;padding:calc(22px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom));background:radial-gradient(120% 70% at 50% 0%,#245451 0%,#12292a 48%,#0a1514 100%)}
+#setup:not([hidden]),#gate:not([hidden]){display:flex;align-items:center;justify-content:center}
+#setup .sshield,#gate .sshield{position:absolute;top:calc(16px + env(safe-area-inset-top));right:18px;width:28px;height:28px;color:#9fb3ae;opacity:.85}
+#setup .sfr,#gate .sfr{--fp:polygon(0 64px,18% 0,82% 0,100% 64px,100% calc(100% - 64px),82% 100%,18% 100%,0 calc(100% - 64px));position:relative;width:min(100%,400px);margin:auto;filter:drop-shadow(0 18px 36px rgba(0,0,0,.5))}
+#setup .sfr::before,#gate .sfr::before,#setup .sfr::after,#gate .sfr::after{content:"";position:absolute;clip-path:var(--fp)}
+#setup .sfr::before,#gate .sfr::before{inset:0;background:linear-gradient(160deg,#4a7b78,#1f3d3b 40%,#386663)}
+#setup .sfr::after,#gate .sfr::after{inset:1.5px;background:linear-gradient(180deg,#183633,#102322 60%,#0c1b19)}
+#setup .sfr>*,#gate .sfr>*{position:relative;z-index:1}
+#setup .stab,#gate .stab,#setup .sfoot,#gate .sfoot{position:relative;width:56%;margin:0 auto}
+#setup .stab,#gate .stab{height:58px;display:flex;align-items:center;justify-content:center;gap:9px;font:600 20px system-ui,sans-serif;letter-spacing:.05em;color:#dce8e5}
+#setup .stab svg,#gate .stab svg{width:30px;height:30px;color:var(--sa);flex:none}
+#setup .stab::before,#gate .stab::before,#setup .sfoot::before,#gate .sfoot::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025))}
+#setup .stab::before,#gate .stab::before{clip-path:polygon(0 100%,10% 0,90% 0,100% 100%)}
+#setup .sfoot,#gate .sfoot{height:58px;margin-top:6px}
+#setup .sfoot::before,#gate .sfoot::before{clip-path:polygon(0 0,100% 0,88% 100%,12% 100%);background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.07))}
+#setup .sbody,#gate .sbody{padding:4px 24px 0}
+.brand{text-align:center;margin:8px 0 14px}.brand .logo{width:128px;height:96px;color:var(--sa);filter:drop-shadow(0 6px 14px rgba(0,0,0,.4))}
+#setup .brand h1,#gate .brand h1{margin:2px 0 4px;font:600 34px/1.15 system-ui,sans-serif;text-align:center;letter-spacing:.01em;color:#e1ebe8}
+#setup .sub,#gate .sub{color:#9fb3ae;font:15px system-ui,sans-serif;margin:0;text-align:center}
+#setup h2,#gate h2{margin:22px 0 8px;font:500 20px system-ui,sans-serif;color:#dfe8e5}
+#setup .sfield,#gate .sfield{position:relative}
+#combo{display:block;box-sizing:border-box;width:100%;height:56px;margin:0;padding:12px 50px 12px 14px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(0,0,0,.3);color:var(--ink);font:16px/30px ui-monospace,Menlo,Consolas,monospace;resize:none;white-space:pre;overflow:hidden;-webkit-text-security:disc}
+#combo.show{-webkit-text-security:none}
+#combo:focus{outline:none;border-color:var(--sa);box-shadow:0 0 0 3px color-mix(in srgb,var(--sa) 25%,transparent)}
+#setup #eye,#gate #eye{position:absolute;right:4px;top:4px;width:48px;height:48px;padding:0;border:0;background:none;color:#9fb3ae;display:flex;align-items:center;justify-content:center}
+#setup #eye svg,#gate #eye svg{width:26px;height:26px}
+#setup #eye .e1,#gate #eye .e1{display:none}#setup #eye.on .e1,#gate #eye.on .e1{display:block}#setup #eye.on .e0,#gate #eye.on .e0{display:none}
+#setup .shint,#gate .shint{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:9px 2px 20px;font:14px/1.3 system-ui,sans-serif;color:#9fb3ae}
+#cs{display:flex;gap:10px;font:18px system-ui,sans-serif;color:#566a65;margin:0;min-height:0;flex:none}#cs span{display:inline-block;transition:color .3s,transform .3s}#cs .ok{transform:scale(1.2)}#cs .ok{color:var(--sa)}
+#setup #go,#gate #go{width:100%;height:54px;padding:0;border:0;border-radius:12px;background:linear-gradient(180deg,#43b5ac,#2a8f88);color:#05201e;font-size:18px;font-weight:600;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+#setup #sst,#gate #sst{text-align:center;margin:12px 0 0;min-height:18px;font:14px/1.3 system-ui,sans-serif}
+#setup #ask,#gate #ask{margin:0 0 14px}
 body:has(#vw:not([hidden])){overflow:hidden}
 .btn,button{-webkit-tap-highlight-color:transparent}
 button:active{opacity:.75}
@@ -335,6 +360,192 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 #pl.full .ib2{width:52px;height:52px}
 #pl.full .big{width:78px;height:78px}
 #pl.full .pr4{order:5;margin-top:18px}
+
+/* ---- экран входа: оживление ---- */
+#setup .lgw,#gate .lgw{position:relative;display:inline-block;animation:lgFloat 5s ease-in-out infinite}
+#setup .lgl,#gate .lgl{position:absolute;left:50%;top:52%;width:170px;height:170px;margin:-85px 0 0 -85px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--sa) 55%,transparent),transparent 72%);opacity:.55;animation:lgPulse 3.6s ease-in-out infinite;pointer-events:none}
+#setup .brand .logo,#gate .brand .logo{position:relative;width:150px;height:112px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.55)) drop-shadow(0 0 14px color-mix(in srgb,var(--sa) 35%,transparent))}
+#setup .brand h1,#gate .brand h1{font-weight:700;font-size:38px;text-shadow:0 2px 14px rgba(0,0,0,.45)}
+#setup h2,#gate h2{font-weight:500;font-size:21px;letter-spacing:.01em}
+#setup .sfr,#gate .sfr{animation:sfIn .7s cubic-bezier(.2,.8,.2,1) both}
+#setup .sfr::after,#gate .sfr::after{background:linear-gradient(180deg,#183633,#102322 60%,#0c1b19);box-shadow:inset 0 0 60px rgba(58,168,159,.07)}
+#setup .sfr::before,#gate .sfr::before{background-size:100% 220%;animation:sfEdge 7s ease-in-out infinite alternate}
+#setup .stab svg,#gate .stab svg{animation:lgPulse 3.6s ease-in-out infinite}
+#setup .sshield,#gate .sshield{animation:lgPulse 4.5s ease-in-out infinite}
+#combo{transition:border-color .25s,box-shadow .25s,background .25s}
+#combo:focus{background:rgba(0,0,0,.38);box-shadow:0 0 0 3px color-mix(in srgb,var(--sa) 28%,transparent),0 0 22px color-mix(in srgb,var(--sa) 30%,transparent)}
+#setup .shint,#gate .shint{margin:10px 2px 26px;font-size:15px}
+#cs{display:none}
+#setup #go,#gate #go{position:relative;overflow:hidden;transition:transform .15s,box-shadow .25s,filter .25s;box-shadow:0 8px 20px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.08) inset}
+#setup #go:active,#gate #go:active{transform:scale(.975);filter:brightness(.95)}
+@keyframes lgFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes lgPulse{0%,100%{opacity:.4}50%{opacity:.85}}
+@keyframes sfIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes sfEdge{from{background-position:0 0}to{background-position:0 100%}}
+@media (prefers-reduced-motion:reduce){#setup *,#gate *,#setup .sfr,#gate .sfr{animation:none!important}}
+
+/* ---- графитовая тема экрана входа ---- */
+#setup,#gate{--sa:#aeb7bc;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.5'/></svg>"),radial-gradient(120% 70% at 50% 0%,#4a4f53 0%,#2a2d30 50%,#141618 100%);background-blend-mode:soft-light,normal}
+#setup .sfr::before,#gate .sfr::before{background:linear-gradient(160deg,#8b9296,#3a3e41 40%,#6a7074)}
+#setup .sfr::after,#gate .sfr::after{background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.5'/></svg>"),repeating-linear-gradient(115deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px),linear-gradient(180deg,#2e3134,#232629 60%,#1a1c1e);background-blend-mode:soft-light,normal,normal;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 60px rgba(0,0,0,.35)}
+#setup .stab,#gate .stab,#setup .brand h1,#gate .brand h1,#setup h2,#gate h2{color:#e4e7e8}
+#setup .sub,#gate .sub,#setup .shint,#gate .shint,#setup .sshield,#gate .sshield,#setup #eye,#gate #eye{color:#9da4a8}
+#setup .stab::before,#gate .stab::before,#setup .sfoot::before,#gate .sfoot::before{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03))}
+#setup .lgl,#gate .lgl{background:radial-gradient(closest-side,rgba(190,200,205,.4),transparent 72%)}
+#setup .brand .logo,#gate .brand .logo{filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)) drop-shadow(0 0 12px rgba(190,200,205,.22))}
+#combo{background:rgba(0,0,0,.38);border-color:rgba(255,255,255,.11);box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
+#combo:focus{border-color:#aeb7bc;background:rgba(0,0,0,.45);box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 0 0 3px rgba(174,183,188,.22)}
+#setup #go,#gate #go{background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.5'/></svg>"),linear-gradient(180deg,#b4bcc0,#80888d);background-blend-mode:soft-light,normal;color:#15181a;box-shadow:0 8px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+
+/* ---- мятный акцент + окно ввода кода ---- */
+#setup,#gate{--sa:#7cc9b8}
+#setup .lgl,#gate .lgl{background:radial-gradient(closest-side,rgba(124,201,184,.38),transparent 72%)}
+#setup .brand .logo,#gate .brand .logo{filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(124,201,184,.3))}
+#setup .stab svg,#gate .stab svg{color:#7cc9b8}
+#combo:focus{border-color:#7cc9b8;box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 0 0 3px rgba(124,201,184,.22),0 0 20px rgba(124,201,184,.18)}
+#setup #go,#gate #go{background:linear-gradient(180deg,#9adccb,#5fae9d);color:#0b2723;box-shadow:0 8px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .15s,box-shadow .25s,filter .25s,opacity .25s}
+#setup #go:disabled,#gate #go:disabled{opacity:.4;filter:saturate(.55);box-shadow:none;transform:none}
+#setup #ask,#gate #ask{margin:0 0 18px;padding:14px 14px 16px;border:1px solid rgba(124,201,184,.4);border-radius:14px;background:rgba(0,0,0,.26);box-shadow:inset 0 2px 8px rgba(0,0,0,.35),0 0 26px rgba(124,201,184,.07);animation:askIn .35s ease both}
+#setup #ask[hidden],#gate #ask[hidden]{display:none}
+#setup #askl,#gate #askl{margin:0 0 10px;font:15px/1.35 system-ui,sans-serif;color:#cfe3dd}
+#setup #aski,#gate #aski{display:block;box-sizing:border-box;width:100%;height:54px;margin:0;padding:0 14px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.4);color:var(--ink);font:20px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;box-shadow:inset 0 2px 6px rgba(0,0,0,.45);transition:border-color .25s,box-shadow .25s}
+#setup #aski:focus,#gate #aski:focus{outline:none;border-color:#7cc9b8;box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 0 0 3px rgba(124,201,184,.22),0 0 20px rgba(124,201,184,.18)}
+#setup #askb,#gate #askb{display:none}
+@keyframes askIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ---- экран ввода имени и пароля ---- */
+#gate .gin{display:block;box-sizing:border-box;width:100%;height:54px;margin:0 0 12px;padding:0 14px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.4);color:var(--ink);font:17px system-ui,sans-serif;box-shadow:inset 0 2px 6px rgba(0,0,0,.45);transition:border-color .25s,box-shadow .25s}
+#gate .gin::placeholder{color:#5f6f6a}
+#gate .gin:focus{outline:none;border-color:#7cc9b8;box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 0 0 3px rgba(124,201,184,.22),0 0 20px rgba(124,201,184,.18)}
+#gate .gin:disabled{opacity:.55}
+#gate .gb{display:block;width:100%;height:54px;margin:6px 0 0;padding:0;border:0;border-radius:12px;background:linear-gradient(180deg,#9adccb,#5fae9d);color:#0b2723;font:600 18px system-ui,sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4)}
+#gate .gb:disabled{opacity:.5}
+#gate .gbk{display:block;width:100%;height:44px;margin:8px 0 0;padding:0;border:0;background:none;color:#9da4a8;font:15px system-ui,sans-serif}
+#gate .gerr{min-height:20px;margin:12px 0 0;text-align:center;font:14px/1.3 system-ui,sans-serif;color:var(--bad)}
+
+/* ---- графит + мята: шторка, меню и окна в стиле экрана входа ---- */
+:root{
+  --nz:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.1'/></svg>");
+  --gr-fill:linear-gradient(180deg,#2e3134,#232629 60%,#1a1c1e);
+  --gr-edge:linear-gradient(160deg,#8b9296,#3a3e41 40%,#6a7074);
+  --mint:#7cc9b8;
+  --mint-a:rgba(124,201,184,.22);
+  --gr-lines:repeating-linear-gradient(115deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px);
+}
+/* затемнение под шторками */
+#drawer,#pick,#rmn,#pw,#ann{background:rgba(6,9,9,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+
+/* боковая шторка */
+#dp{
+  position:relative;
+  background:radial-gradient(130% 40% at 0% 0%,rgba(124,201,184,.16),transparent 60%),var(--nz),var(--gr-lines),var(--gr-fill);
+  border-radius:0 22px 22px 0;
+  border-right:1px solid transparent;
+  box-shadow:inset -1px 0 0 rgba(124,201,184,.35),inset 0 1px 0 rgba(255,255,255,.07),12px 0 40px rgba(0,0,0,.55);
+  color:#e4e7e8;
+}
+#dp::after{content:"";position:absolute;top:0;right:0;bottom:0;width:1px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(124,201,184,.55) 18%,rgba(139,146,150,.35) 60%,transparent)}
+#dp input{background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.11);border-radius:12px;color:var(--ink);box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
+#dp input:focus{outline:none;border-color:var(--mint);box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 0 0 3px var(--mint-a),0 0 20px rgba(124,201,184,.18)}
+#dp button{border:1px solid transparent;border-radius:12px;color:#e4e7e8;transition:background .15s,border-color .15s}
+#dp button:active{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border-color:rgba(124,201,184,.4)}
+#dp button svg,#dp button .i{color:var(--mint)}
+#dp .del,#dp .del svg{color:var(--bad)}
+#dp .rp.on{color:var(--mint);background:linear-gradient(90deg,rgba(124,201,184,.16),rgba(124,201,184,.03));border-color:rgba(124,201,184,.35)}
+#dp .sec{color:var(--mint);opacity:.9;letter-spacing:.1em}
+#dp hr{border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(124,201,184,.45),rgba(139,146,150,.25),transparent)}
+#dp #addrepo{border:1px solid rgba(124,201,184,.5);background:rgba(124,201,184,.08);color:var(--mint)}
+#rbar{border:1px solid transparent;border-radius:14px;
+  background:linear-gradient(rgba(20,22,24,.75),rgba(20,22,24,.75)) padding-box,var(--gr-edge) border-box;box-shadow:inset 0 2px 6px rgba(0,0,0,.4)}
+#rsw .tg{background:#3a3e41;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+#rsw[aria-checked=true] .tg{background:var(--mint);box-shadow:0 0 12px rgba(124,201,184,.45)}
+
+/* нижние шторки */
+#pickl,#rml{
+  position:relative;
+  background:linear-gradient(180deg,rgba(124,201,184,.12),transparent 90px),var(--nz),var(--gr-lines),var(--gr-fill);
+  border-radius:22px 22px 0 0;
+  box-shadow:inset 0 1px 0 rgba(124,201,184,.5),inset 0 0 60px rgba(0,0,0,.3),0 -10px 40px rgba(0,0,0,.5);
+}
+#pickl::before,#rml::before{content:"";display:block;width:42px;height:4px;margin:2px auto 8px;border-radius:99px;background:linear-gradient(90deg,#6a7074,var(--mint),#6a7074);opacity:.8}
+#rml button,#pickl button{border:1px solid transparent;color:#e4e7e8;border-radius:12px}
+#rml button:active,#pickl button:active{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border-color:rgba(124,201,184,.4)}
+#rml .rt{color:var(--mint);letter-spacing:.06em}
+
+/* выпадающие меню и «+» */
+#sortm,#vmenu{
+  border:1px solid transparent;border-radius:14px;
+  background:var(--nz),var(--gr-lines),linear-gradient(180deg,#2e3134,#1d2022) padding-box,var(--gr-edge) border-box;
+  box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);
+}
+#sortm button,#vmenu button{color:#e4e7e8;position:relative}
+#sortm button+button::before,#vmenu button+button::before{content:"";position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(124,201,184,.3),transparent)}
+#sortm button:active,#vmenu button:active{background:rgba(124,201,184,.12)}
+#sortm svg,#vmenu svg,#fabm svg{color:var(--mint)}
+#fabm button{
+  border:1px solid transparent;color:#e4e7e8;
+  background:var(--nz),var(--gr-lines),linear-gradient(180deg,#2e3134,#1d2022) padding-box,var(--gr-edge) border-box;
+  box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 0 1px rgba(124,201,184,.06),inset 0 1px 0 rgba(255,255,255,.08);
+}
+#fabm button:active{filter:brightness(1.15)}
+
+/* окна ввода пароля и оповещения */
+#pw .pwb,#ann .annb{
+  border:1px solid transparent;border-radius:18px;color:#e4e7e8;
+  background:radial-gradient(120% 50% at 50% 0%,rgba(124,201,184,.14),transparent 70%),var(--nz),var(--gr-lines),var(--gr-fill) padding-box,var(--gr-edge) border-box;
+  box-shadow:0 18px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 60px rgba(0,0,0,.3);
+}
+#pw input,#ann input{background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 2px 6px rgba(0,0,0,.45);color:var(--ink)}
+#pw input:focus{outline:none;border-color:var(--mint);box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 0 0 3px var(--mint-a)}
+#pwb{border-color:rgba(124,201,184,.55);color:var(--mint)}
+#ann .annp{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08)}
+
+/* страница «Настройки» */
+#adm{background:radial-gradient(120% 40% at 50% 0%,rgba(124,201,184,.14),transparent 70%),var(--nz),var(--gr-lines),linear-gradient(180deg,#232629,#141618)}
+#adm .ah{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,transparent,rgba(124,201,184,.5),transparent) 1;background:rgba(20,22,24,.6);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+@media (prefers-reduced-motion:reduce){#dp.anim{animation:none}}
+
+/* ---- меню фильтра и сортировки в стиле шторки ---- */
+#fltm,#sortm{
+  background:radial-gradient(130% 70% at 100% 0%,rgba(124,201,184,.16),transparent 60%),var(--nz),var(--gr-lines),var(--gr-fill);
+  border:1px solid transparent;border-radius:18px;padding:6px;color:#e4e7e8;transform-origin:top right;
+  box-shadow:inset 0 0 0 1px rgba(124,201,184,.22),inset 0 1px 0 rgba(255,255,255,.08),0 16px 40px rgba(0,0,0,.6);
+}
+#fltm::after,#sortm::after{content:"";position:absolute;left:14px;right:14px;top:0;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(124,201,184,.7),rgba(139,146,150,.3),transparent)}
+#fltm:not([hidden]),#sortm:not([hidden]){animation:mnin .17s cubic-bezier(.2,.8,.2,1)}
+@keyframes mnin{from{opacity:0;transform:translateY(-6px) scale(.95)}}
+#fltm button,#sortm button{border:1px solid transparent;border-radius:12px;color:#e4e7e8;transition:background .15s,border-color .15s}
+#fltm button:active,#sortm button:active{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border-color:rgba(124,201,184,.4)}
+#fltm button svg,#sortm button svg,#fltm button .i,#sortm button .i{color:var(--mint)}
+#fltm button.on,#sortm button.on{color:var(--mint);font-weight:600;background:linear-gradient(90deg,rgba(124,201,184,.16),rgba(124,201,184,.03));border-color:rgba(124,201,184,.35)}
+
+/* ---- плавность: шторка и остальное ---- */
+#drawer{-webkit-backdrop-filter:none;backdrop-filter:none;background-color:rgba(6,9,9,.66);touch-action:pan-y;overscroll-behavior:contain}
+#dp{will-change:transform;backface-visibility:hidden;touch-action:pan-y;overscroll-behavior:contain}
+#dp.anim{animation:dsl .24s cubic-bezier(.2,.8,.2,1)}
+#drawer.da{animation:dscrim .24s ease-out}
+@keyframes dscrim{from{background-color:rgba(6,9,9,0)}}
+.th[data-th]:not(.ok){background:var(--card);animation:none;position:relative;overflow:hidden}
+.th[data-th]:not(.ok)::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.07) 50%,transparent 70%);transform:translateX(-100%);animation:shim2 1.3s linear infinite;will-change:transform}
+@keyframes shim2{to{transform:translateX(100%)}}
+.lkhero i{will-change:transform,opacity}
+.lockbtn::before{will-change:transform}
+/* ---- шторка: затемнение отдельным слоем (opacity на GPU), без перерисовки экрана ---- */
+#drawer{background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;animation:none!important;transition:none!important;contain:layout style}
+#dsc{position:absolute;inset:0;background:rgba(6,9,9,.66);opacity:0;will-change:opacity;pointer-events:none}
+#dp{position:relative;z-index:1;transform:translate3d(-100%,0,0);will-change:transform;contain:layout paint;-webkit-user-select:none;user-select:none}
+#dp input{-webkit-user-select:text;user-select:text}
+html.drw .th[data-th]:not(.ok)::after{animation-play-state:paused}
+/* ---- фон главного экрана как у шторки ---- */
+body{background:transparent}
+:root{--scr-bg:radial-gradient(120% 34% at 0% 0%,rgba(124,201,184,.11),transparent 62%),var(--nz),repeating-linear-gradient(115deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px),linear-gradient(180deg,#232628 0,#1a1c1e 45%,#131516 100%)}
+html:has(#app:not([hidden])){background:#131516}
+body:has(#app:not([hidden]))::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--scr-bg);transform:translateZ(0)}
+body:has(#app:not([hidden])) #top{background:var(--scr-bg);background-attachment:fixed}
+@media (prefers-reduced-motion:reduce){#fltm:not([hidden]),#sortm:not([hidden]),#drawer.da,.th[data-th]:not(.ok)::after{animation:none}}
+</style>
+<
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -343,14 +554,41 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 <body>
 
 <section id="setup">
-  <div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M17 44a10 10 0 0 1-1.5-19.9A16 16 0 0 1 46 22.5 11 11 0 0 1 47 44z" fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M32 40V28m-5.5 5.5L32 28l5.5 5.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><h1>Облачко</h1><p class="sub">Ваши данные в безопасности</p></div>
-  <h2>Вход (один раз)</h2>
-  <textarea id="combo" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-  <div id="cs"><span>•</span><span>•</span><span>•</span></div>
-  <input id="aid" hidden><input id="ahash" hidden><input id="phone" hidden>
-  <div id="ask" hidden><div id="askl" class="m"></div><input id="aski" autocomplete="off"><button class="p" id="askb">Продолжить</button></div>
-  <div class="row"><button class="p" id="go">Войти</button></div>
-  <div id="sst"></div>
+  <svg class="sshield" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l7.5 3v5.6c0 4.7-3.1 8.3-7.5 10.4-4.4-2.1-7.5-5.7-7.5-10.4V5.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 2.5l7.5 3v5.6c0 4.7-3.1 8.3-7.5 10.4z" fill="currentColor"/></svg>
+  <div class="sfr">
+    <div class="stab"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M17 44a10 10 0 0 1-1.5-19.9A16 16 0 0 1 46 22.5 11 11 0 0 1 47 44z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="25" cy="34" r="4.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M29.5 34H42m-4 0v4.5M42 34v4.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>ОБЛАЧКО</span></div>
+    <div class="sbody">
+      <div class="brand"><div class="lgw"><i class="lgl"></i><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M17 44a10 10 0 0 1-1.5-19.9A16 16 0 0 1 46 22.5 11 11 0 0 1 47 44z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M27 31v-3.5a5 5 0 0 1 10 0V31" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="24" y="31" width="16" height="12.5" rx="2.5" fill="currentColor" fill-opacity=".85"/><circle cx="32" cy="36.2" r="1.7" fill="#0c1b19"/><path d="M32 37v3" stroke="#0c1b19" stroke-width="1.8" stroke-linecap="round"/></svg></div><h1>Облачко</h1><p class="sub">Ваши данные в безопасности</p></div>
+      <h2>Вход</h2>
+      <div class="sfield"><textarea id="combo" rows="1" wrap="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Данные для входа"></textarea><button type="button" id="eye" aria-label="Показать или скрыть"><svg class="e0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 20L20 4"/></svg><svg class="e1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+      <div class="shint"><span>Введите ключ доступа</span><div id="cs"><span>•</span><span>•</span><span>•</span></div></div>
+      <input id="aid" hidden><input id="ahash" hidden><input id="phone" hidden>
+      <div id="ask" hidden><div id="askl" class="m"></div><input id="aski" autocomplete="off"><button class="p" id="askb">Продолжить</button></div>
+      <div class="row"><button class="p" id="go">Войти</button></div>
+      <div id="sst"></div>
+    </div>
+    <div class="sfoot"></div>
+  </div>
+</section>
+
+<section id="gate" hidden>
+  <div class="sfr">
+    <div class="stab"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M17 44a10 10 0 0 1-1.5-19.9A16 16 0 0 1 46 22.5 11 11 0 0 1 47 44z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="25" cy="34" r="4.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M29.5 34H42m-4 0v4.5M42 34v4.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>ОБЛАЧКО</span></div>
+    <div class="sbody">
+      <div class="brand"><div class="lgw"><i class="lgl"></i><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M17 44a10 10 0 0 1-1.5-19.9A16 16 0 0 1 46 22.5 11 11 0 0 1 47 44z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M27 31v-3.5a5 5 0 0 1 10 0V31" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="24" y="31" width="16" height="12.5" rx="2.5" fill="currentColor" fill-opacity=".85"/><circle cx="32" cy="36.2" r="1.7" fill="#0c1b19"/><path d="M32 37v3" stroke="#0c1b19" stroke-width="1.8" stroke-linecap="round"/></svg></div><h1>Облачко</h1><p class="sub">Ваши данные в безопасности</p></div>
+      <h2 id="gh">Имя пользователя</h2>
+      <input id="gname" class="gin" type="text" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="например, anna">
+      <div id="gpw" hidden>
+        <input id="gp1" class="gin" type="password" autocomplete="new-password" placeholder="Пароль">
+        <input id="gp2" class="gin" type="password" autocomplete="new-password" placeholder="Повторите пароль" hidden>
+      </div>
+      <div class="shint"><span id="ghint">Только буквы и цифры, без пробелов</span></div>
+      <button class="gb" id="gb" type="button">Продолжить</button>
+      <button class="gbk" id="gbk" type="button">Отмена</button>
+      <div id="gerr" class="gerr"></div>
+    </div>
+    <div class="sfoot"></div>
+  </div>
 </section>
 
 <section id="boot" hidden><div class="spin"></div><p class="m" id="bootm">Подключаюсь…</p></section>
@@ -373,7 +611,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
   <button class="fab" id="fab" aria-label="Добавить" data-ic="plus"></button><input type="file" id="fi" multiple hidden>
   <div id="fabm" hidden><button id="fabd" data-ic="folderplus">Папка</button><button id="fabf" data-ic="file">Файл</button></div>
 </main>
-<div id="drawer" hidden><div id="dp">
+<div id="drawer" hidden><div id="dsc"></div><div id="dp">
   <input id="q" type="search" placeholder="Поиск по всему архиву">
   <div class="sec secrow"><span>Репозиториум</span><button id="addrepo" aria-label="Новый репозиторий" data-ic="plus"></button></div>
   <div id="repl"></div>
@@ -939,24 +1177,70 @@ $('#admb').onclick=async e=>{
     }
   }catch(x){say(err(x),1)}
 };
+/* ---- отдельный экран: имя пользователя, затем пароль (для нового профиля - два поля) ---- */
+function gatePage(){
+  return new Promise(resolve=>{
+    const G=$('#gate'),nm=$('#gname'),p1=$('#gp1'),p2=$('#gp2'),pw=$('#gpw'),gb=$('#gb'),gbk=$('#gbk'),gh=$('#gh'),hint=$('#ghint'),er=$('#gerr');
+    let stage='name',ex=null,uname='',busy=false;
+    const setErr=t=>{er.textContent=t||''};
+    const paint=()=>{
+      setErr('');
+      pw.hidden=stage==='name';
+      p2.hidden=stage!=='new';
+      nm.disabled=stage!=='name';
+      gbk.textContent=stage==='name'?'Отмена':'Назад';
+      if(stage==='name'){gh.textContent='Имя пользователя';hint.textContent='Только буквы и цифры, без пробелов';gb.textContent='Продолжить'}
+      else if(stage==='login'){gh.textContent='Пароль';hint.textContent='Пароль для «'+ex.u+'»';gb.textContent='Войти';setTimeout(()=>p1.focus(),50)}
+      else{gh.textContent='Новый пользователь';hint.textContent='Имя «'+uname+'» свободно. Придумайте пароль';gb.textContent='Создать';setTimeout(()=>p1.focus(),50)}
+    };
+    const finish=v=>{
+      G.hidden=true;gb.onclick=gbk.onclick=null;nm.onkeydown=p1.onkeydown=p2.onkeydown=null;
+      nm.value='';p1.value='';p2.value='';
+      show();resolve(v);
+    };
+    const act=async()=>{
+      if(busy)return;
+      setErr('');
+      if(stage==='name'){
+        const name=clean(nm.value).trim();
+        if(!name){setErr('Введите имя пользователя');return}
+        if(!/^[\p{L}\p{N}_.-]{2,24}$/u.test(name)){setErr('От 2 до 24 символов: буквы, цифры, _ . -');return}
+        uname=name;
+        ex=users.find(x=>x.u.toLowerCase()===name.toLowerCase())||null;
+        stage=ex?'login':'new';
+        paint();return;
+      }
+      if(stage==='login'){
+        if(!p1.value){setErr('Введите пароль');return}
+        if(hashPw(p1.value,ex.h.split(':')[0])!==ex.h){setErr('Неверный пароль');p1.select();return}
+        S.guestUser=ex.u;S.guestHash=ex.h;sv('tgm',S);finish(true);return;
+      }
+      if(!p1.value){setErr('Придумайте пароль');return}
+      if(p1.value!==p2.value){setErr('Пароли не совпали');p2.select();return}
+      busy=true;gb.disabled=true;
+      try{
+        const h=hashPw(p1.value,Math.random().toString(36).slice(2,10)),e=await encPw(p1.value),c=Date.now();
+        const m=await withChat(()=>client.sendMessage(S.chat,UR+JSON.stringify({u:uname,h,e,c})));
+        users.push({id:m.id,u:uname,h,e,c});S.guestUser=uname;S.guestHash=h;sv('tgm',S);jlog('user+',uname);
+        busy=false;gb.disabled=false;finish(true);
+      }catch(x){busy=false;gb.disabled=false;setErr('Не удалось создать профиль: '+err(x))}
+    };
+    gb.onclick=act;
+    gbk.onclick=()=>{if(busy)return;if(stage==='name')finish(false);else{stage='name';p1.value='';p2.value='';paint();setTimeout(()=>nm.focus(),50)}};
+    nm.onkeydown=e=>{if(e.key==='Enter')act()};
+    p1.onkeydown=e=>{if(e.key==='Enter'){if(stage==='new')p2.focus();else act()}};
+    p2.onkeydown=e=>{if(e.key==='Enter')act()};
+    stage='name';nm.value='';p1.value='';p2.value='';
+    $('#setup').hidden=true;$('#boot').hidden=true;G.hidden=false;
+    paint();
+    setTimeout(()=>nm.focus(),60);
+  });
+}
 async function guestGate(){
   const rec=users.find(x=>x.u===S.guestUser);
   if(S.guestUser&&rec&&rec.h===S.guestHash)return true;
   S.guestUser='';S.guestHash='';
-  const name=clean(await uiPrompt('Ваше имя пользователя. Если такого ещё нет, оно будет создано. Только буквы и цифры, без пробелов.')||'').trim();
-  if(!name)return false;
-  if(!/^[\p{L}\p{N}_.-]{2,24}$/u.test(name)){alert('Имя: от 2 до 24 символов, буквы, цифры, _ . -');return false}
-  const ex=users.find(x=>x.u.toLowerCase()===name.toLowerCase());
-  if(ex){
-    const pw=await askPass('Пароль для «'+ex.u+'»');if(pw===null)return false;
-    if(hashPw(pw,ex.h.split(':')[0])!==ex.h){alert('Неверный пароль');return false}
-    S.guestUser=ex.u;S.guestHash=ex.h;sv('tgm',S);return true;
-  }
-  const a=await askPass('Придумайте пароль для «'+name+'»');if(!a)return false;
-  const b=await askPass('Повторите пароль');if(a!==b){alert('Пароли не совпали');return false}
-  const h=hashPw(a,Math.random().toString(36).slice(2,10)),e=await encPw(a),c=Date.now();
-  const m=await withChat(()=>client.sendMessage(S.chat,UR+JSON.stringify({u:name,h,e,c})));
-  users.push({id:m.id,u:name,h,e,c});S.guestUser=name;S.guestHash=h;sv('tgm',S);jlog('user+',name);return true;
+  return gatePage();
 }
 async function firstRepo(){
   if(S.rp||S.viewer||repos.length||files.length)return;S.rp=1;sv('tgm',S);
@@ -972,9 +1256,14 @@ async function loadLib(){
   for(const u of U){try{return await import(u)}catch(e){errs.push(u.replace('https://','').split('/')[0]+': '+err(e))}}
   throw new Error('Не загрузилась библиотека Telegram. Проверьте интернет/VPN и откройте файл в Chrome. Детали: '+errs.join(' | '));
 }
+let ASKDONE=null;
 function ask(label,type){return new Promise(res=>{
-  booting=false;show();$('#askl').textContent=label;const i=$('#aski');i.type=type;i.value='';$('#ask').hidden=false;i.focus();
-  $('#askb').onclick=()=>{$('#ask').hidden=true;res(i.value.trim())};
+  booting=false;show();$('#askl').textContent=label;const i=$('#aski'),g=$('#go');i.type=type;i.value='';$('#ask').hidden=false;g.disabled=true;i.focus();
+  const done=()=>{const v=i.value.trim();if(!v)return;$('#ask').hidden=true;g.disabled=false;ASKDONE=null;i.oninput=i.onkeydown=null;res(v)};
+  ASKDONE=done;
+  i.oninput=()=>{g.disabled=!i.value.trim()};
+  i.onkeydown=e=>{if(e.key==='Enter')done()};
+  $('#askb').onclick=done;
 })}
 async function connect(){
   say('Подключаюсь…');
@@ -1317,7 +1606,7 @@ async function urlOf(f,noDisk){
   return C.get(f.id);
 }
 
-const thumb=(f,u)=>f.mime.startsWith('video/')?`<video src="${u}#t=0.1" preload="metadata" muted playsinline></video><span class="pb">▶</span>`:`<img alt="" src="${u}">`;
+const thumb=(f,u)=>f.mime.startsWith('video/')?`<video src="${u}#t=0.1" preload="metadata" muted playsinline></video><span class="pb">▶</span>`:`<img alt="" decoding="async" src="${u}">`;
 const obs=new IntersectionObserver(es=>es.forEach(async e=>{
   if(!e.isIntersecting)return;obs.unobserve(e.target);
   if(U.on||loadingTrack){const el=e.target;setTimeout(()=>{if(el.isConnected)obs.observe(el)},4000);return}
@@ -1347,7 +1636,7 @@ function folderRow(p){
 let FT='all';
 const ftOk=f=>FT==='all'||(FT==='img'?f.mime.startsWith('image/'):FT==='vid'?f.mime.startsWith('video/'):FT==='aud'?isAud(f):!(f.mime.startsWith('image/')||f.mime.startsWith('video/')||isAud(f)));
 function drawFltMenu(){
-  $('#fltm').innerHTML=[['all','Все файлы'],['img','Фото'],['vid','Видео'],['aud','Музыка'],['doc','Документы']].map(([k,t])=>`<button data-ft="${k}">${k===FT?icon('check'):'<i class="i"></i>'}${t}</button>`).join('');
+  $('#fltm').innerHTML=[['all','Все файлы'],['img','Фото'],['vid','Видео'],['aud','Музыка'],['doc','Документы']].map(([k,t])=>`<button data-ft="${k}"${k===FT?' class="on"':''}>${k===FT?icon('check'):'<i class="i"></i>'}${t}</button>`).join('');
   $('#fltb').classList.toggle('on',FT!=='all');
 }
 $('#fltb').onclick=e=>{e.stopPropagation();$('#sortm').hidden=true;$('#fltm').hidden=!$('#fltm').hidden};
@@ -1794,54 +2083,117 @@ $('#pl').addEventListener('touchcancel',mEnd,{passive:true});
 $('#crumbs').onclick=go;
 $('#q').oninput=render;
 $('#vmode').onclick=()=>{P.view=P.view==='grid'?'list':'grid';sv('tgmp',P);render()};
-const openDrawer=()=>{const dp=$('#dp');dp.style.transform='';dp.style.transition='';dp.classList.add('anim');$('#drawer').hidden=false};
-const closeDrawer=()=>{$('#drawer').hidden=true;$('#q').blur()};
+const DRW=$('#drawer'),DPE=$('#dp'),DSC=$('#dsc'),DEASE='cubic-bezier(.22,.8,.22,1)';
+let dClosing=false,dPos=0,dFin=null,dTimer=0,dRaf=0,dNext=0;
+const dW=()=>Math.min(300,innerWidth*.85);
+const dReduce=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+/* p: 0 — закрыта, 1 — открыта. Двигаем только transform/opacity — это работает на GPU без перерисовки */
+const dSet=(p,dur)=>{
+  dPos=p;
+  const tr=dur?dur+'ms':'';
+  DPE.style.transition=dur?`transform ${tr} ${DEASE}`:'none';
+  DSC.style.transition=dur?`opacity ${tr} linear`:'none';
+  DPE.style.transform=`translate3d(${((p-1)*100).toFixed(3)}%,0,0)`;
+  DSC.style.opacity=p.toFixed(3);
+};
+const dDrag=p=>{dNext=Math.max(0,Math.min(1,p));dPos=dNext;if(!dRaf)dRaf=requestAnimationFrame(()=>{dRaf=0;dSet(dNext,0)})};
+const dCancelRaf=()=>{if(dRaf){cancelAnimationFrame(dRaf);dRaf=0}};
+const dShow=()=>{DRW.hidden=false;document.documentElement.classList.add('drw')};
+const drawerDone=()=>{
+  clearTimeout(dTimer);dFin=null;dClosing=false;dCancelRaf();
+  DRW.hidden=true;document.documentElement.classList.remove('drw');
+  dSet(0,0);
+};
+const dOpenDone=()=>{clearTimeout(dTimer);dFin=null;DPE.style.transition='none';DSC.style.transition='none'};
+/* плавно доехать до t (0 или 1); vel — скорость пальца в долях ширины/мс (для «броска») */
+function dSettle(t,vel){
+  clearTimeout(dTimer);dCancelRaf();
+  const dist=Math.abs(t-dPos),W=dW();
+  let dur=dReduce()?0:Math.round(Math.max(130,Math.min(300,dist*W/Math.max(Math.abs(vel||0)*W,.9)*1)));
+  if(!vel)dur=dReduce()?0:Math.round(Math.max(140,Math.min(280,dist*300)));
+  dClosing=t===0;
+  const fin=t===0?drawerDone:dOpenDone;
+  if(dist<.002||!dur){dSet(t,0);fin();return}
+  dFin=fin;
+  dSet(t,dur);
+  dTimer=setTimeout(()=>{if(dFin){const f=dFin;dFin=null;f()}},dur+400);
+}
+DPE.addEventListener('transitionend',e=>{if(e.target===DPE&&e.propertyName==='transform'&&dFin){const f=dFin;dFin=null;clearTimeout(dTimer);f()}});
+const openDrawer=()=>{
+  clearTimeout(dTimer);dFin=null;dClosing=false;dCancelRaf();
+  dSet(0,0);dShow();void DPE.offsetWidth;dSettle(1);
+};
+const closeDrawer=()=>{
+  if(DRW.hidden)return;$('#q').blur();
+  if(dClosing)return;
+  dSettle(0);
+};
 $('#hb').onclick=openDrawer;
-let swiped=false,oX=null,oY=0,od=0,oOn=false;
+/* --- свайп от края: открыть шторку --- */
+let swiped=false,oX=null,oY=0,oBase=0,oOn=false,oLast=0,oLT=0,oV=0;
 document.addEventListener('touchstart',e=>{
   oX=null;
   if($('#app').hidden||!$('#drawer').hidden||!$('#vw').hidden||!$('#pick').hidden||selMode||$('#pl').classList.contains('full'))return;
   if(e.touches.length!==1||e.target.closest('#crumbs,#sortm,#fltm,input,select'))return;
-  const t=e.touches[0];oX=t.clientX;oY=t.clientY;od=0;oOn=false;
+  const t=e.touches[0];oX=t.clientX;oY=t.clientY;oOn=false;oV=0;oLast=t.clientX;oLT=e.timeStamp;
 },{passive:true});
 document.addEventListener('touchmove',e=>{
   if(oX===null)return;
   const t=e.touches[0],dx=t.clientX-oX,dy=t.clientY-oY;
   if(!oOn){
-    if(dx>14&&dx>Math.abs(dy)*1.5){oOn=true;const dp=$('#dp');dp.classList.remove('anim');dp.style.transition='none';dp.style.transform='translateX(-100%)';$('#drawer').hidden=false}
+    if(dx>12&&dx>Math.abs(dy)*1.5){
+      oOn=true;oBase=dx;
+      clearTimeout(dTimer);dFin=null;dClosing=false;
+      dSet(0,0);dShow();
+    }
     else{if(Math.abs(dy)>14)oX=null;return}
   }
-  od=dx;const W=$('#dp').offsetWidth;$('#dp').style.transform=`translateX(${Math.min(0,-W+dx)}px)`;
+  const dt=e.timeStamp-oLT;
+  if(dt>0){oV=oV*.6+((t.clientX-oLast)/dt)*.4;oLast=t.clientX;oLT=e.timeStamp}
+  dDrag((dx-oBase)/dW());
 },{passive:true});
 const endOpen=()=>{
   if(oX===null||!oOn){oX=null;return}
   oX=null;oOn=false;
-  const dp=$('#dp'),W=dp.offsetWidth;dp.style.transition='transform .18s';
   swiped=true;setTimeout(()=>{swiped=false},350);
-  if(od>W*0.35){dp.style.transform='translateX(0)';setTimeout(()=>{dp.style.transition='';dp.style.transform=''},190)}
-  else{dp.style.transform='translateX(-100%)';setTimeout(()=>{$('#drawer').hidden=true;dp.style.transform='';dp.style.transition=''},190)}
+  const v=oV/dW();
+  dCancelRaf();
+  dSettle(v>.0025?1:v<-.0025?0:(dNext>.35?1:0),Math.abs(v)>.0025?Math.abs(v):0);
 };
 document.addEventListener('touchend',endOpen,{passive:true});
 document.addEventListener('touchcancel',endOpen,{passive:true});
-let dX=null,dY=0,dd=0;
-$('#drawer').addEventListener('touchstart',e=>{const t=e.touches[0];dX=t.clientX;dY=t.clientY;dd=0;$('#dp').style.transition='none'},{passive:true});
+/* --- свайп влево по открытой шторке: закрыть --- */
+let dX=null,dY=0,dBase=0,dLock=0,dLast=0,dLT=0,dV=0;
+$('#drawer').addEventListener('touchstart',e=>{
+  if(dClosing||dFin||e.touches.length!==1){dX=null;return}
+  const t=e.touches[0];dX=t.clientX;dY=t.clientY;dLock=0;dV=0;dLast=t.clientX;dLT=e.timeStamp;
+},{passive:true});
 $('#drawer').addEventListener('touchmove',e=>{
-  if(dX===null)return;
+  if(dX===null||dLock===2)return;
   const t=e.touches[0],dx=t.clientX-dX,dy=t.clientY-dY;
-  if(dd===0&&Math.abs(dy)>Math.abs(dx))return;
-  dd=Math.min(0,dx);$('#dp').style.transform=`translateX(${dd}px)`;
+  if(!dLock){
+    if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+    if(Math.abs(dy)>Math.abs(dx)){dLock=2;return}
+    dLock=1;dBase=dx;
+  }
+  const dt=e.timeStamp-dLT;
+  if(dt>0){dV=dV*.6+((t.clientX-dLast)/dt)*.4;dLast=t.clientX;dLT=e.timeStamp}
+  dDrag(1+Math.min(0,dx-dBase)/dW());
 },{passive:true});
-$('#drawer').addEventListener('touchend',()=>{
+const dEnd=()=>{
   if(dX===null)return;dX=null;
-  const dp=$('#dp');dp.style.transition='transform .18s';
-  if(dd<-60){dp.style.transform='translateX(-100%)';setTimeout(closeDrawer,170)}
-  else dp.style.transform='';
-},{passive:true});
-$('#drawer').onclick=e=>{if(e.target.id==='drawer'||(e.target.closest('#dp button')&&!e.target.closest('.rdots,#rsw')))closeDrawer()};
+  if(dLock!==1)return;
+  swiped=true;setTimeout(()=>{swiped=false},350);
+  const v=dV/dW();
+  dCancelRaf();
+  dSettle(v<-.0025?0:v>.0025?1:(dNext<.65?0:1),Math.abs(v)>.0025?Math.abs(v):0);
+};
+$('#drawer').addEventListener('touchend',dEnd,{passive:true});
+$('#drawer').addEventListener('touchcancel',dEnd,{passive:true});$('#drawer').onclick=e=>{if(e.target.id==='drawer'||(e.target.closest('#dp button')&&!e.target.closest('.rdots,#rsw')))closeDrawer()};
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')closeDrawer()});
 $('#sqx').onclick=()=>{$('#q').value='';render()};
 function drawSortMenu(){
-  $('#sortm').innerHTML=[['new','Сначала новые'],['old','Сначала старые'],['name','По названию'],['no','По номеру'],['my','Мой порядок']].map(([k,t])=>`<button data-s="${k}">${k===P.sort?icon('check'):'<i class="i"></i>'}${t}</button>`).join('');
+  $('#sortm').innerHTML=[['new','Сначала новые'],['old','Сначала старые'],['name','По названию'],['no','По номеру'],['my','Мой порядок']].map(([k,t])=>`<button data-s="${k}"${k===P.sort?' class="on"':''}>${k===P.sort?icon('check'):'<i class="i"></i>'}${t}</button>`).join('');
 }
 $('#sortb').onclick=e=>{e.stopPropagation();$('#fltm').hidden=true;$('#sortm').hidden=!$('#sortm').hidden};
 $('#sortm').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;P.sort=b.dataset.s;sv('tgmp',P);$('#sortm').hidden=true;render()};
@@ -2586,7 +2938,9 @@ function drawCs(){
   });
 }
 $('#combo').addEventListener('input',drawCs);
+$('#eye').onclick=()=>{const c=$('#combo');c.classList.toggle('show');$('#eye').classList.toggle('on',c.classList.contains('show'))};
 $('#go').onclick=async()=>{
+  if(ASKDONE){ASKDONE();return}
   const c=$('#combo').value.trim(),wasV=!!S.viewer,same=c===[S.apiId,S.apiHash,S.phone].join(' ');S.viewer=false;
   if(c){
     const r=parseCombo(c),miss=[!r.id&&'api_id',!r.hash&&'api_hash',!r.phone&&'телефон'].filter(Boolean);
