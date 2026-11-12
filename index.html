@@ -113,9 +113,20 @@ main{touch-action:pan-y}
 .del{color:var(--bad)}
 [hidden]{display:none!important}
 #st{display:none}
-.lockbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(28px + env(safe-area-inset-bottom));width:min(340px,calc(100% - 36px));height:58px;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:99px;background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 65%,#fff));color:var(--accink);font:600 17px system-ui,sans-serif;box-shadow:0 8px 24px color-mix(in srgb,var(--acc) 40%,transparent),0 2px 6px rgba(0,0,0,.4);z-index:4;cursor:pointer;transition:transform .12s}
-.lockbtn:active{transform:translateX(-50%) scale(.96)}
-.lockbtn svg{width:24px;height:24px}
+.lockbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(28px + env(safe-area-inset-bottom));width:68px;height:68px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid color-mix(in srgb,var(--acc) 28%,transparent);border-radius:50%;background:color-mix(in srgb,var(--acc) 14%,var(--card));color:var(--acc);box-shadow:0 0 0 6px color-mix(in srgb,var(--acc) 10%,transparent),0 6px 18px rgba(0,0,0,.45);z-index:4;cursor:pointer;transition:transform .12s}
+.lockbtn:active{transform:translateX(-50%) scale(.94)}
+.lockbtn::before{content:"";position:absolute;inset:-1px;border-radius:50%;padding:3px;background:conic-gradient(from 0deg,transparent 0 60%,var(--acc) 100%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:lkspin 5s linear infinite;pointer-events:none}
+@keyframes lkspin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.lockbtn::before{animation:none}}
+.lockbtn .lk{display:flex;align-items:center;justify-content:center}
+.lockbtn svg{width:28px;height:28px}
+.lockbtn .lt{display:none}
+body.lk-sl .lockbtn{width:min(340px,calc(100% - 36px));height:60px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:none;touch-action:none;user-select:none;-webkit-user-select:none}
+body.lk-sl .lockbtn:active{transform:translateX(-50%)}
+body.lk-sl .lockbtn::before{display:none}
+body.lk-sl .lockbtn .lt{display:block;font:500 15px system-ui,sans-serif;color:var(--mute);padding-left:46px;pointer-events:none}
+body.lk-sl .lockbtn .lk{position:absolute;left:5px;top:5px;width:48px;height:48px;border-radius:50%;background:var(--acc);color:var(--accink);touch-action:none}
+body.lk-sl .lockbtn .lk.snap{transition:transform .2s}
 body.pl-on .lockbtn{bottom:calc(160px + env(safe-area-inset-bottom))}
 button.fab{border:0;padding:0}.fab .i{transition:transform .18s}.fab.open .i{transform:rotate(45deg)}
 #fabm{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:5}
@@ -123,7 +134,7 @@ body.pl-on #fabm{bottom:calc(244px + env(safe-area-inset-bottom))}
 #fabm button{display:flex;gap:9px;align-items:center;padding:10px 16px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.4);font-size:15px;color:var(--ink);animation:fanin .16s ease backwards}
 #fabm button:nth-child(2){animation-delay:.05s}
 @keyframes fanin{from{opacity:0;transform:translateY(14px) scale(.9)}}
-.ro #setb{display:none!important}
+
 .off #top{box-shadow:inset 0 -2px 0 var(--bad)}
 #adm{position:fixed;inset:0;z-index:15;background:var(--bg);display:flex;flex-direction:column}
 #adm .ah{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;border-bottom:1px solid var(--line);font:600 17px system-ui,sans-serif}
@@ -716,10 +727,12 @@ let fromSet=false;
 $('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки'){drawSettings();return}fromSet=false;$('#adm').hidden=true};
 function drawSettings(){
   fromSet=false;openAdm('Настройки');
-  $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
+  const LKB=`<div class="uc"><div class="un">Кнопка открытия репозитория</div><div class="us">Как открывать зашифрованный или запароленный репозиторий.</div><div class="row"><button class="chip${ld('lkstyle','round')==='slide'?'':' on'}" data-lks="round">Круглая</button><button class="chip${ld('lkstyle','round')==='slide'?' on':''}" data-lks="slide">Слайдер</button></div></div>`;
+  $('#admb').innerHTML=S.viewer?`<div style="padding:10px 14px">${LKB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px">${LKB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
 $('#admb').addEventListener('click',async e=>{
+  {const ks=e.target.closest('[data-lks]');if(ks){const v=ks.dataset.lks;sv('lkstyle',v);applyLks();document.querySelectorAll('[data-lks]').forEach(x=>x.classList.toggle('on',x.dataset.lks===v));return}}
   if(e.target.closest('#ulogb')){ulShow();return}
   if(e.target.closest('#appupd')){(async()=>{try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(x){}location.reload()})();return}
   const b=e.target.closest('#cachex');if(!b||b.disabled)return;
@@ -1323,8 +1336,8 @@ function render(){
   ORDIDX=ordIdx(R(),cur);const cmp=(P.sort==='my'&&q)?SORTS.new:(SORTS[P.sort]||SORTS.new);
   let html='';
   drawRepos();
-  if(!isLocked(R(),'')&&needKey(R())){html='<div class="empty"><span class="big">🔐</span>Репозиторий зашифрован</div><button class="lockbtn unk">'+icon('lock')+'<span>Ввести пароль шифрования</span></button>'}
-  else if(isLocked(R(),'')){html='<div class="empty"><span class="big">🔒</span>Репозиторий защищён паролем</div><button class="lockbtn unl">'+icon('lock')+'<span>Ввести пароль</span></button>'}
+  if(!isLocked(R(),'')&&needKey(R())){html='<div class="empty"><span class="big">🔐</span>Репозиторий зашифрован</div><button class="lockbtn unk" aria-label="Ввести пароль шифрования"><span class="lk">'+icon('lock')+'</span><span class="lt">Потяните, чтобы открыть</span></button>'}
+  else if(isLocked(R(),'')){html='<div class="empty"><span class="big">🔒</span>Репозиторий защищён паролем</div><button class="lockbtn unl" aria-label="Ввести пароль"><span class="lk">'+icon('lock')+'</span><span class="lt">Потяните, чтобы открыть</span></button>'}
   else if(q){
     const L=files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&(f.name.toLowerCase().includes(q)||pad(f.no).includes(q)||String(f.no)===q)).filter(ftOk).sort(cmp);
     html=L.length?L.map(f=>fileRow(f,true)).join(''):'<div class="empty"><span class="big">🔍</span>Ничего не найдено</div>';
@@ -2002,10 +2015,37 @@ const stg=$('#vstage');
 const media=()=>stg.firstElementChild&&stg.firstElementChild.matches('img')?stg.firstElementChild:null;
 const curFile=()=>files.find(x=>x.id===openId);
 const applyZ=anim=>{const m=media();if(!m)return;m.style.transition=anim?'transform .2s':'none';m.style.transform=`translate(${z.x}px,${z.y}px) scale(${z.s})`};
+function applyLks(){document.body.classList.toggle('lk-sl',ld('lkstyle','round')==='slide')}
+function lkGo(b){if(b.classList.contains('unk'))ensureKey(R()).then(ok=>ok&&render());else unlock(R(),'').then(ok=>ok&&render())}
+applyLks();
+(()=>{
+  const L=$('#list');let st=null;
+  const sl=()=>document.body.classList.contains('lk-sl');
+  const inb=e=>sl()&&e.target.closest&&e.target.closest('.lockbtn');
+  L.addEventListener('pointerdown',e=>{
+    const b=inb(e);if(!b)return;e.stopPropagation();
+    const k=b.querySelector('.lk');if(!k)return;
+    k.classList.remove('snap');
+    st={b,k,x:e.clientX,max:b.clientWidth-k.offsetWidth-12,id:e.pointerId,dx:0};
+    try{b.setPointerCapture(e.pointerId)}catch(x){}
+  },true);
+  L.addEventListener('pointermove',e=>{
+    if(!st||e.pointerId!==st.id)return;e.stopPropagation();
+    st.dx=Math.max(0,Math.min(st.max,e.clientX-st.x));st.k.style.transform='translateX('+st.dx+'px)';
+  },true);
+  const end=e=>{
+    if(!st||e.pointerId!==st.id)return;e.stopPropagation();
+    const s=st;st=null;s.k.classList.add('snap');
+    if(s.dx>=s.max*.8){s.k.style.transform='translateX(0)';try{navigator.vibrate&&navigator.vibrate(15)}catch(x){}lkGo(s.b);return}
+    if(s.dx<6){s.k.style.transform='translateX(22px)';setTimeout(()=>{s.k.style.transform='translateX(0)'},220);return}
+    s.k.style.transform='translateX(0)';
+  };
+  L.addEventListener('pointerup',end,true);L.addEventListener('pointercancel',end,true);
+  ['touchstart','touchmove','touchend'].forEach(t=>L.addEventListener(t,e=>{if(inb(e))e.stopPropagation()},{capture:true,passive:true}));
+})();
 $('#list').onclick=e=>{
   if(lp||swiped||Date.now()<dragBlock)return;
-  if(e.target.closest('.unk')){ensureKey(R()).then(ok=>ok&&render());return}
-  if(e.target.closest('.unl')){unlock(R(),'').then(ok=>ok&&render());return}
+  {const lb=e.target.closest('.unk,.unl');if(lb){if(document.body.classList.contains('lk-sl')&&e.detail)return;lkGo(lb);return}}
   const d=e.target.closest('[data-o]');
   if(d){const id=+d.dataset.o;if(e.target.closest('.ck')){if(selMode)toggleSel(id);else enterSel(id)}else if(selMode)toggleSel(id);else{const f0=files.find(x=>x.id===id);if(f0&&isAud(f0))startPlayer(id);else showAt(curList.indexOf(id))}}
   else go(e);
