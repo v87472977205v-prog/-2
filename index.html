@@ -538,9 +538,12 @@ window.addEventListener('beforeunload',e=>{if(U.on){e.preventDefault();e.returnV
 const C=new Map();
 let repos=[],locks=[],users=[],JOUR=[],JENC=[],ORD=[],ORDIDX=new Map(),ownkey=null,OFFLINE=false;const UN=new Set();
 let UNS=ld('tgun',{});
-const unAdd=(k,h)=>{UN.add(k);UNS[k]=h;sv('tgun',UNS)};
-const unDel=k=>{UN.delete(k);delete UNS[k];sv('tgun',UNS)};
-function syncUN(){UN.clear();for(const k of Object.keys(UNS)){const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===UNS[k])UN.add(k);else delete UNS[k]}sv('tgun',UNS)}
+/* репозиторий запоминается открытым на устройстве, а вот папки - только пока приложение открыто (FUN) */
+const FUN=new Map();
+const isFk=k=>!!k.slice(k.indexOf('\n')+1);
+const unAdd=(k,h)=>{UN.add(k);if(isFk(k)){FUN.set(k,h);return}UNS[k]=h;sv('tgun',UNS)};
+const unDel=k=>{UN.delete(k);FUN.delete(k);delete UNS[k];sv('tgun',UNS)};
+function syncUN(){UN.clear();for(const k of Object.keys(UNS)){if(isFk(k)){delete UNS[k];continue}const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===UNS[k])UN.add(k);else delete UNS[k]}for(const[k,h]of[...FUN]){const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===h)UN.add(k);else FUN.delete(k)}sv('tgun',UNS)}
 let P=ld('tgmp',{sort:'new',view:'grid',repo:''}),sel=new Set(),selMode=false,booting=false,lp=false,pickMode='one';
 const SORTS={new:(a,b)=>b.date-a.date,old:(a,b)=>a.date-b.date,name:(a,b)=>a.name.localeCompare(b.name,'ru',{numeric:true}),no:(a,b)=>a.no-b.no,my:(a,b)=>{const x=ORDIDX.get(a.id),y=ORDIDX.get(b.id);return x===undefined&&y===undefined?a.date-b.date:x===undefined?1:y===undefined?-1:x-y}};
 const storageOK=(()=>{try{localStorage.setItem('_t','1');const ok=localStorage.getItem('_t')==='1';localStorage.removeItem('_t');return ok}catch(e){return false}})();
@@ -622,7 +625,7 @@ const BIOWEB=/^https:$/.test(location.protocol)||location.hostname==='localhost'
 const BIOSUP=!!(window.PublicKeyCredential&&navigator.credentials&&window.isSecureContext&&BIOWEB);
 let BIOSKIP=false;
 const bioKey=(r,p)=>r+'\n'+p;
-const bioOn=l=>!!(BIOSUP&&BIO.id&&BIO.k[bioKey(l.r,l.p)]===l.h);
+const bioOn=l=>{if(!(BIOSUP&&BIO.id&&l))return false;if(BIO.k[bioKey(l.r,l.p)]===l.h)return true;if(!l.p){return false}const rl=lockOf(l.r,'');return !!(rl&&BIO.k[bioKey(rl.r,'')]===rl.h)};
 const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
 const bin2b=u=>btoa(String.fromCharCode(...new Uint8Array(u)));
 const b2bin=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
@@ -732,6 +735,12 @@ async function jflush(){
   if(JQ.length)setTimeout(jflush,1500);
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)jflush()});
+let HIDAT=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){HIDAT=Date.now();return}
+  if(HIDAT&&Date.now()-HIDAT>60000&&FUN.size){for(const k of FUN.keys())UN.delete(k);FUN.clear();try{render()}catch(e){}}
+  HIDAT=0;
+});
 const ACT={up:'загрузил','del':'удалил',mv:'перенёс',ren:'переименовал','rep+':'создал репозиторий','rep-':'удалил репозиторий','fo+':'создал папку','fo-':'удалил папку',login:'вошёл',view:'открыл',play:'включил',dl:'скачал',lock:'поставил пароль:',unlock:'снял пароль:',chg:'сменил пароль:',badpw:'ввёл неверный пароль:','user+':'создал профиль','user-':'удалил профиль',cp:'скопировал',enc:'шифрование:',ord:'изменил порядок файлов:',key:'создал ключ для друга',out:'вышел из аккаунта',jclr:'очистил журнал',own:'включил хранение паролей',ann:'опубликовал оповещение','ann-':'удалил оповещение'};
 function openAdm(t){$('#admt').textContent=t;$('#adm').hidden=false}
 let fromSet=false;
