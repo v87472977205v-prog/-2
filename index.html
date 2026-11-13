@@ -742,8 +742,8 @@ const fabBlocked=()=>isLocked(R(),cur)||needKey(R());
 /* ---- пароли (защита внутри приложения) ---- */
 const lockOf=(r,p)=>locks.find(l=>l.r===r&&l.p===p);
 const GU='👤';
-const UR='🙋 ',JR='📝 ',OKR='🗝 ',ORR='🔢 ',AN='📣 ';
-let ANN=[];
+const UR='🙋 ',JR='📝 ',OKR='🗝 ',ORR='🔢 ',AN='📣 ',CVX='🖼 ';
+let ANN=[],CVRM=[];
 const repoGuest=r=>{const x=r&&repos.find(q=>q.name===r);return !!(x&&x.guest&&(!x.owner||x.owner===S.guestUser))};
 const visRepo=x=>!S.viewer||!x.guest||!x.owner||x.owner===S.guestUser;
 const mineRepo=x=>S.viewer?!!(x.guest&&(!x.owner||x.owner===S.guestUser)):!x.guest;
@@ -1266,6 +1266,7 @@ async function decAll(){
     if(!f.enc||f.dec||!KEYS[f.repo])continue;
     try{const j=JSON.parse(td.decode(await aesD(KEYS[f.repo],b64d(f.encName))));f.name=j.n;f.mime=mimeOf(j.m||'application/octet-stream',j.n);f.dec=1}catch(e){f.dec='x'}
   }
+  try{cvLoadRemote()}catch(e){}
 }
 async function ensureKey(r){
   if(KEYS[r])return true;const e=encOf(r);if(!e)return true;
@@ -1325,7 +1326,7 @@ async function readFast(prog){
   return[...all.values()].sort((x,y)=>y.id-x.id);
 }
 async function refresh(){
-  const out=[],fol=[],reps=[],lks=[],usr=[],jr=[],jenc=[],ordp=[],ans=[],seen=new Set();let off,okk=null;
+  const out=[],fol=[],reps=[],lks=[],usr=[],jr=[],jenc=[],ordp=[],ans=[],cvx=[],seen=new Set();let off,okk=null;
   const proc=m=>{
     if(seen.has(m.id))return;seen.add(m.id);
       const e=entry(m);
@@ -1334,6 +1335,7 @@ async function refresh(){
         if(t.startsWith(UR)){try{const j=JSON.parse(t.slice(UR.length));if(j.u&&j.h)usr.push({id:m.id,u:j.u,h:j.h,e:j.e||'',c:j.c||0})}catch(x){}}
         else if(t.startsWith(JR)){try{const j=JSON.parse(t.slice(JR.length));if(Array.isArray(j)){for(const e of j)jr.push({...e,mid:m.id,pl:1})}else if(j&&j.k&&j.d)jenc.push({mid:m.id,k:j.k,d:j.d})}catch(x){}}
         else if(t.startsWith(ORR)){try{const j=JSON.parse(t.slice(ORR.length));ordp.push({mid:m.id,r:j.r||'',p:j.p||'',n:j.n||0,o:String(j.o||'')})}catch(x){}}
+        else if(t.startsWith(CVX)){try{const j=JSON.parse(t.slice(CVX.length));if(j&&j.d)cvx.push({mid:m.id,r:j.r||'',e:j.e?1:0,d:j.d})}catch(x){}}
         else if(t.startsWith(AN)){try{const j=JSON.parse(t.slice(AN.length));if(j&&j.v&&Array.isArray(j.l))ans.push({id:m.id,v:String(j.v),d:j.d||0,l:j.l.map(String)})}catch(x){}}
         else if(t.startsWith(OKR)){try{okk={id:m.id,...JSON.parse(t.slice(OKR.length))}}catch(x){}}
         else if(t.startsWith(LK)){try{const j=JSON.parse(t.slice(LK.length));lks.push({id:m.id,r:j.r||'',p:j.p||'',h:j.h})}catch(x){}}
@@ -1355,7 +1357,7 @@ async function refresh(){
       off=Math.min(...b.map(m=>m.id));
     }
   }
-  files=out;folders=fol;repos=reps;locks=lks;users=usr;JOUR=jr;JENC=jenc;ORD=ordBuild(ordp);ANN=ans.sort((a,b)=>a.id-b.id);ownkey=okk;syncUN();saveIndex();if(OWNPRIV)await jDecryptAll();
+  files=out;folders=fol;repos=reps;locks=lks;users=usr;JOUR=jr;JENC=jenc;ORD=ordBuild(ordp);ANN=ans.sort((a,b)=>a.id-b.id);ownkey=okk;CVRM=cvx;syncUN();saveIndex();if(OWNPRIV)await jDecryptAll();try{cvLoadRemote()}catch(e){}
   if(R()&&!repos.some(x=>x.name===R()&&showRepo(x)))P.repo='';
   if(cur&&!allPaths().includes(cur))cur='';
   annAuto();
@@ -1634,10 +1636,12 @@ const cvIO=(mode,fn)=>CVDB().then(db=>new Promise((ok,no)=>{const t=db.transacti
 const cvGet=id=>cvIO('readonly',s=>s.get(id)).catch(()=>null);
 const cvPut=(id,rec)=>cvIO('readwrite',s=>s.put(rec,id)).catch(()=>{});
 const cvEqm='<span class="eqm"><i></i><i></i><i></i></span>';
-const covInner=id=>(COV.get(id)?`<img alt="" src="${COV.get(id)}">`:icon('music'))+cvEqm;
+const CVD={u:''};try{fetch('cover-default.jpg',{method:'HEAD'}).then(r=>{if(r.ok){CVD.u='cover-default.jpg';try{render()}catch(e){}}}).catch(()=>{})}catch(e){}
+const cvUrl=id=>COV.get(id)||(CVD.u&&COV.has(id)?CVD.u:'');
+const covInner=id=>(cvUrl(id)?`<img alt="" src="${cvUrl(id)}">`:icon('music'))+cvEqm;
 function cvPaint(id){document.querySelectorAll(`[data-cv="${id}"]`).forEach(el=>{el.innerHTML=covInner(id)})}
 function cvPlayer(f){
-  const u=f&&COV.get(f.id),pl=$('#pl');if(!pl)return;
+  const u=f&&cvUrl(f.id),pl=$('#pl');if(!pl)return;
   $('#pcv').style.backgroundImage=u?`url("${u}")`:'';
   $('#eq').style.setProperty('--cv',u?`url("${u}")`:'none');
   pl.classList.toggle('hascv',!!u);pl.classList.toggle('cvbg',!!u);
@@ -1646,7 +1650,7 @@ function cvApply(f,rec){
   if(COV.has(f.id)&&CVT.get(f.id)===rec.t)return;
   const u=rec.b?URL.createObjectURL(rec.b):(rec.u||'');
   CVT.set(f.id,rec.t);COV.set(f.id,u);if(rec.a)CVA.set(f.id,rec.a);
-  if(u)cvPaint(f.id);
+  if(u||CVD.u)cvPaint(f.id);
   if(pi>=0&&pq[pi]&&pq[pi].id===f.id){cvPlayer(f);msMeta(f)}
 }
 const cvTerm=n=>dispName(n).replace(/[\[(][^\])]*[\])]/g,' ').replace(/\b(official|lyrics?|audio|video|clip|hd|hq|mp3)\b/gi,' ').replace(/^\s*\d{1,3}[\s.\-_)]+/,'').replace(/_+/g,' ').replace(/\s+/g,' ').trim();
@@ -1704,6 +1708,27 @@ async function cvHead(f){
   }finally{try{const q=it.return&&it.return();q&&q.catch&&q.catch(()=>{})}catch(e){}}
   return new Blob(parts);
 }
+async function cvHeadEnc(f){
+  const key=KEYS[f.repo];if(!key||!client)return null;
+  const CH=1<<20,n=Math.max(1,Math.ceil((f.size-4)/(CH+32)));
+  const it=client.download(f.fid)[Symbol.asyncIterator]();let parts=[],got=0,need=8,v2=false;
+  try{
+    for(;;){
+      const r=await stallP(it.next(),20000);if(r.done)break;
+      parts.push(r.value);got+=r.value.length||r.value.byteLength||0;
+      if(need===8&&got>=8){
+        const h=new Uint8Array(await new Blob(parts).slice(0,8).arrayBuffer());
+        v2=h[0]===84&&h[1]===71&&h[2]===69&&h[3]===50;
+        if(!v2&&!(h[0]===84&&h[1]===71&&h[2]===69&&h[3]===49))return null;
+        const L=new DataView(h.buffer).getUint32(4);if(L>CH+64)return null;need=8+L;
+      }
+      if(need>8&&got>=need)break;
+    }
+  }finally{try{const q=it.return&&it.return();q&&q.catch&&q.catch(()=>{})}catch(e){}}
+  if(need<=8||got<need)return null;
+  const u=new Uint8Array(await new Blob(parts).slice(8,need).arrayBuffer());
+  return new Blob([await aesD(key,u,v2?chunkAad(0,n):undefined)]);
+}
 async function cvHeavy(f,hi,rec){
   const web=cvWebOn();let blob=null,tag=null;
   if(C.has(f.id)){try{blob=await(await fetch(C.get(f.id))).blob()}catch(e){}}
@@ -1715,20 +1740,27 @@ async function cvHeavy(f,hi,rec){
     const hb=await cvHead(f).catch(()=>null);
     if(hb)tag=await cvTags(hb).catch(()=>null);
   }
+  else if(f.enc&&f.dec===1&&KEYS[f.repo]&&client&&!OFFLINE){
+    if(!hi&&(U.on||loadingTrack))throw new Error('busy');
+    const hb=await cvHeadEnc(f).catch(()=>null);
+    if(hb)tag=await cvTags(hb).catch(()=>null);
+  }
   const full=!!blob||!!(tag&&tag.auth);
-  let out=null,tried=false;
+  let out=null,tried=false,pubU='';
   if(tag&&tag.pic){out={b:await cvShrink(new Blob([tag.pic.data],{type:tag.pic.mime})),k:'tag',a:tag.artist||'',fc:true,t:Date.now()}}
   else if(rec&&rec.k==='web'&&(rec.b||rec.u)&&!full){return}          /* уже есть обложка из интернета, а файл ещё не доступен — пока оставляем */
   else if(web&&(!f.enc||f.dec===1)&&Date.now()>=CVQ.cool){
     let w=null;
     try{w=await cvWeb(f);tried=true}catch(e){CVQ.cool=Date.now()+(e&&e.rate?90000:300000)}   /* лимит или нет доступа к iTunes: на время прекращаем, запись останется «не искали» */
     if(w){
+      pubU=w.url;
       try{const r=await fetch(w.url);if(!r.ok)throw 0;out={b:await cvShrink(await r.blob()),k:'web',a:w.artist,fc:false,t:Date.now()}}
       catch(e){out={u:w.url,k:'web',a:w.artist,fc:false,t:Date.now()}}
     }
   }
   if(!out)out={k:'none',w:tried?1:0,a:(tag&&tag.artist)||'',fc:full,t:Date.now()};
   await cvPut(f.id,out);cvApply(f,out);
+  if(out.k==='web'&&pubU)try{cvPub(f,pubU,out.a)}catch(e){}
 }
 async function cvPump(){
   if(CVQ.run)return;CVQ.run=true;
@@ -1736,23 +1768,75 @@ async function cvPump(){
     while(CVQ.q.length){
       const it=CVQ.q.shift(),f=it.f;
       try{
-        if(!it.hi&&!document.querySelector(`[data-cv="${f.id}"]`))continue;     /* строка уже прокручена/перерисована — не тратим трафик */
+        if(!it.hi&&!it.bg&&!document.querySelector(`[data-cv="${f.id}"]`))continue;     /* строка уже прокручена/перерисована — не тратим трафик */
         await cvHeavy(f,it.hi,it.rec);await sleep(200);
       }catch(e){
-        if(e&&/busy/.test(e.message||''))setTimeout(()=>document.querySelectorAll(`[data-cv="${f.id}"]`).forEach(el=>cvObs.observe(el)),8000);
+        if(e&&/busy/.test(e.message||'')){if(it.bg)setTimeout(()=>cvEnsure(f,false,true),8000);else setTimeout(()=>document.querySelectorAll(`[data-cv="${f.id}"]`).forEach(el=>cvObs.observe(el)),8000)}
       }finally{CVQ.set.delete(f.id)}
     }
   }finally{CVQ.run=false}
 }
-async function cvEnsure(f,hi){
+async function cvEnsure(f,hi,bg){
   if(!f||!isAud(f))return;
   if(!hi&&COV.has(f.id))return;
   const rec=await cvGet(f.id),web=cvWebOn();
+  const rm=web&&CVR.get(f.id);
+  if(rm&&!(rec&&(rec.b||rec.u))){const r2={k:'web',u:rm.u,a:rm.a||'',fc:false,t:Date.now()};await cvPut(f.id,r2);cvApply(f,r2);return}
   const fresh=rec&&(rec.b||rec.u||(rec.k==='none'&&Date.now()-rec.t<3*864e5&&(rec.w||!web)));
   if(fresh)cvApply(f,rec);
   const todo=!fresh||(hi&&rec.k!=='tag'&&!rec.fc&&C.has(f.id));
   if(!todo||CVQ.set.has(f.id))return;
-  CVQ.set.add(f.id);hi?CVQ.q.unshift({f,hi,rec}):CVQ.q.push({f,hi,rec});cvPump();
+  CVQ.set.add(f.id);hi?CVQ.q.unshift({f,hi,rec,bg}):CVQ.q.push({f,hi,rec,bg});cvPump();
+}
+/* общий индекс: найденные в интернете обложки пишутся в канал (для зашифрованных репозиториев — зашифрованно), на другом устройстве они подхватываются без скачивания */
+const CVR=new Map(),CVDONE=new Set(),CVP=[];let cvPT=0,cvPB=false;
+async function cvLoadRemote(){
+  let ch=false;
+  for(const m of CVRM){
+    if(CVDONE.has(m.mid))continue;
+    try{
+      let txt;
+      if(m.e){const k=KEYS[m.r];if(!k)continue;txt=td.decode(await aesD(k,b64d(m.d)))}
+      else txt=m.d;
+      const j=JSON.parse(txt);
+      for(const x of j.i||[])if(x&&x[0]&&x[1]){CVR.set(x[0],{u:String(x[1]),a:String(x[2]||'')});ch=true}
+      CVDONE.add(m.mid);
+    }catch(e){CVDONE.add(m.mid)}
+  }
+  cvAllSoon();
+}
+function cvPub(f,u,a){
+  if(!f||!u||CVR.has(f.id))return;
+  CVR.set(f.id,{u,a:a||''});CVP.push({r:f.repo||'',id:f.id,u,a:a||''});
+  clearTimeout(cvPT);cvPT=setTimeout(cvFlush,8000);
+}
+async function cvFlush(){
+  if(cvPB||!CVP.length||OFFLINE||!client||!S.chat)return;
+  cvPB=true;
+  try{
+    while(CVP.length){
+      const r=CVP[0].r,grp=[];
+      for(let i=0;i<CVP.length&&grp.length<10;i++)if(CVP[i].r===r)grp.push(CVP[i]);
+      const e=encOf(r);if(e&&!KEYS[r]){for(const g of grp)CVP.splice(CVP.indexOf(g),1);continue}
+      const json=JSON.stringify({i:grp.map(g=>[g.id,g.u,g.a])});
+      const body=e?{r,e:1,d:b64e(await aesE(KEYS[r],te.encode(json)))}:{r,e:0,d:json};
+      const txt=CVX+JSON.stringify(body);
+      if(txt.length>3900){for(const g of grp)CVP.splice(CVP.indexOf(g),1);continue}
+      const m=await withChat(()=>client.sendMessage(S.chat,txt));
+      CVDONE.add(m.id);CVRM.push({mid:m.id,r,e:e?1:0,d:body.d});
+      for(const g of grp)CVP.splice(CVP.indexOf(g),1);
+      await sleep(1200);
+    }
+  }catch(e){setTimeout(cvFlush,60000)}
+  cvPB=false;
+}
+/* подбор обложек сразу для всей музыки, а не только для видимых строк и проигранных треков */
+let cvAllT=0,cvAllRun=false;
+function cvAllSoon(){clearTimeout(cvAllT);cvAllT=setTimeout(cvAll,2500)}
+async function cvAll(){
+  if(cvAllRun||!client||OFFLINE||!files)return;cvAllRun=true;
+  try{for(const f of files.slice()){if(!isAud(f)||COV.has(f.id))continue;if(f.enc&&f.dec!==1)continue;await cvEnsure(f,false,true)}}
+  finally{cvAllRun=false}
 }
 const cvObs=new IntersectionObserver(es=>es.forEach(e=>{
   if(!e.isIntersecting)return;cvObs.unobserve(e.target);
@@ -2085,7 +2169,7 @@ function markPlaying(){
    состояние «играет» держится на время загрузки трека, обработчики перевешиваются при каждом треке и при возврате в приложение. */
 let HOLD=false,LOADPLAY=false;
 const msState=()=>{try{navigator.mediaSession.playbackState=((loadingTrack&&LOADPLAY&&!HOLD)||!au.paused)?'playing':'paused'}catch(e){}};
-function msMeta(f){try{if('mediaSession' in navigator){const cu=COV.get(f.id);navigator.mediaSession.metadata=new MediaMetadata({title:f.name.replace(/\.[^.]+$/,''),artist:CVA.get(f.id)||'Мой архив',album:'Облачко',artwork:cu?[{src:cu,sizes:'512x512',type:'image/jpeg'}]:[]})}}catch(e){}}
+function msMeta(f){try{if('mediaSession' in navigator){const cu=cvUrl(f.id);navigator.mediaSession.metadata=new MediaMetadata({title:f.name.replace(/\.[^.]+$/,''),artist:CVA.get(f.id)||'Мой архив',album:'Облачко',artwork:cu?[{src:cu,sizes:'512x512',type:'image/jpeg'}]:[]})}}catch(e){}}
 const msPos=()=>{try{if('mediaSession' in navigator&&au.duration>0&&isFinite(au.duration))navigator.mediaSession.setPositionState({duration:au.duration,playbackRate:au.playbackRate||1,position:Math.min(Math.max(0,au.currentTime),au.duration)})}catch(e){}};
 async function msPlay(){
   if(loadingTrack){HOLD=false;LOADPLAY=true;msState();return}   /* нажали «play», пока трек грузится — начнёт играть сразу после загрузки */
