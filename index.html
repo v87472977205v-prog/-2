@@ -1345,7 +1345,6 @@ async function refresh(){
   files=out;folders=fol;repos=reps;locks=lks;users=usr;JOUR=jr;JENC=jenc;ORD=ordBuild(ordp);ANN=ans.sort((a,b)=>a.id-b.id);ownkey=okk;syncUN();saveIndex();if(OWNPRIV)await jDecryptAll();
   if(R()&&!repos.some(x=>x.name===R()&&showRepo(x)))P.repo='';
   if(cur&&!allPaths().includes(cur))cur='';
-  say(`В архиве файлов: ${files.length}`);
   annAuto();
 }
 
@@ -2882,7 +2881,6 @@ if(S.apiId&&S.apiHash&&(S.auto||S.chat)){
       if(S.viewer)jlog('login','вход');
       await firstRepo();
       booting=false;ready=true;showSetup=false;show();
-      if(early)say(`В архиве файлов: ${files.length}`);
     }catch(x){
       booting=false;
       if(early||(S.auto&&await loadOffline())){OFFLINE=true;document.body.classList.add('off');ready=true;showSetup=false;show();say('Нет связи. Показаны сохранённые данные; открываются недавно просмотренные файлы');return}
