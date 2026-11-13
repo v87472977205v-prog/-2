@@ -382,6 +382,30 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 #setup #go:active{opacity:.85}
 #setup #sst{margin-top:14px;text-align:center}
 #setup #ask{margin:0 0 16px;background:#1d2624;border:1px solid #5fc3a6;border-radius:10px}
+
+/* ---- боковое меню в бирюзовом стиле: только плоские цвета, без размытия и свечения, чтобы шторка двигалась легко ---- */
+#dp{background:#071a18;border-right:1px solid #124a43}
+#dp input[type=search],#dp #q{background:#030d0c;border:2px solid #1fb8a0;border-radius:14px;color:#e8fffb}
+#dp input::placeholder{color:#5d9a90}
+#dp .sec{color:#3fd8bf}
+#dp hr{border-top-color:#124a43}
+#rbar{border:2px solid #1fb8a0;background:#030d0c}
+#rsw .tg{background:#123a35}
+#dp #addrepo{border:2px solid #1fb8a0;color:#2ee6cb}
+#dp .rp.on{color:#2ee6cb}
+
+/* ---- отдельный экран ввода кода (в стиле регистрации) ---- */
+#setup #ask{position:fixed;inset:0;z-index:41;display:flex;flex-direction:column;margin:0;padding:0;border:0;border-radius:0;background:var(--bgfx);color:#2ee6cb;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;overflow-y:auto;overscroll-behavior:contain}
+#setup #ask[hidden]{display:none}
+#ask .askin{flex:1 0 auto;width:100%;max-width:440px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 56px) 22px 24px}
+#ask .rglogo{display:block;width:112px;height:112px;margin:0 auto;color:#2ee6cb;filter:drop-shadow(0 0 10px rgba(46,230,203,.35))}
+#ask .rgt{margin:30px 0 6px;text-align:center;font-weight:700;font-size:44px;line-height:1.1;font-family:inherit;color:#2ee6cb}
+#ask .rgs{margin:0;text-align:center;font-size:19px;color:#b7c9c5}
+#setup #askl{margin:44px 0 20px;text-align:center;font-weight:600;font-size:26px;line-height:1.3;font-family:inherit;color:#2ee6cb}
+#setup #aski{display:block;width:100%;height:60px;margin:0;padding:0 18px;border:3px solid #2ee6cb;border-radius:16px;background:#020909;color:#e8fffb;font-size:22px;font-family:inherit;caret-color:#e8fffb;box-shadow:0 0 14px rgba(46,230,203,.18);-webkit-appearance:none;appearance:none;outline:none}
+#setup #aski:focus{box-shadow:0 0 0 2px rgba(46,230,203,.35),0 0 18px rgba(46,230,203,.35)}
+#setup #askb{flex:none;display:block;width:calc(100% - 36px);max-width:560px;height:68px;margin:0 auto calc(env(safe-area-inset-bottom) + 18px);padding:0;border:0;border-radius:16px;background:#0ff0d2;color:#04302a;font-weight:600;font-size:26px;font-family:inherit;box-shadow:0 0 22px rgba(15,240,210,.28)}
+@media (max-height:700px){#ask .askin{padding-top:calc(env(safe-area-inset-top) + 20px)}#ask .rglogo{width:84px;height:84px}#ask .rgt{margin-top:14px;font-size:36px}#setup #askl{margin-top:20px;font-size:22px}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -399,7 +423,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
     <div class="stf"><textarea id="combo" rows="1" wrap="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="stk"></textarea><button type="button" id="eye" aria-label="Показать ключ" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="eo" d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle class="eo" cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path class="ec" d="M3 4l18 16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button></div>
     <div class="stk"><span id="stk">Ключ доступа</span><div id="cs"><span>•</span><span>•</span><span>•</span></div></div>
     <input id="aid" hidden><input id="ahash" hidden><input id="phone" hidden>
-    <div id="ask" hidden><div id="askl" class="m"></div><input id="aski" autocomplete="off"><button class="p" id="askb">Продолжить</button></div>
+    <div id="ask" hidden><div class="askin"><svg class="rglogo" viewBox="0 0 64 64" aria-hidden="true"><path d="M17 46a11 11 0 0 1-1.6-21.9A17 17 0 0 1 48 23.5 11.6 11.6 0 0 1 48.5 46z" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/><path d="M32 41V28m-6 6l6-6 6 6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg><h1 class="rgt">Облачко</h1><p class="rgs">Ваши данные в безопасности</p><h2 id="askl" class="rgh"></h2><input id="aski" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></div><button type="button" class="p" id="askb">Продолжить</button></div>
     <button class="p" id="go">Войти</button>
     <div id="sst"></div>
   </div>
@@ -2675,6 +2699,7 @@ function drawCs(){
   });
 }
 $('#combo').addEventListener('input',drawCs);
+$('#aski').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#askb').click()}});
 $('#eye').onclick=()=>{const c=$('#combo'),on=!c.classList.contains('show');c.classList.toggle('show',on);$('#eye').setAttribute('aria-pressed',on);$('#eye').setAttribute('aria-label',on?'Скрыть ключ':'Показать ключ')};
 $('#go').onclick=async()=>{
   const c=$('#combo').value.trim(),wasV=!!S.viewer,same=c===[S.apiId,S.apiHash,S.phone].join(' ');S.viewer=false;
