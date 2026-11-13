@@ -858,7 +858,7 @@ async function bioELoad(r){
   if(!await bioAsk())return null;
   const rec=await idbOp('m','readonly',s=>s.get('bk:'+r));
   if(!rec||!rec.k)return null;
-  await aesD(rec.k,b64d(encOf(r).c));return rec.k;
+  const ee=encOf(r);await aesD(rec.k,b64d(ee.k||ee.c));return rec.k;
 }
 function bioEOff(r){delete BIO.e[r];saveBio();try{idbOp('m','readwrite',s=>s.delete('bk:'+r)).catch(()=>{})}catch(x){}}
 async function bioEOffer(r){
@@ -1271,6 +1271,15 @@ const hasCrypto=()=>!!(window.crypto&&crypto.subtle);
 async function deriveKey(pw,salt){const km=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function aesE(key,u8,aad){const iv=crypto.getRandomValues(new Uint8Array(12)),p={name:'AES-GCM',iv};if(aad)p.additionalData=aad;const ct=new Uint8Array(await crypto.subtle.encrypt(p,key,u8)),o=new Uint8Array(12+ct.length);o.set(iv);o.set(ct,12);return o}
 const chunkAad=(i,n)=>{const a=new Uint8Array(8),dv=new DataView(a.buffer);dv.setUint32(0,i);dv.setUint32(4,n);return a};
+async function deriveRaw(pw,salt){const km=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveBits']);return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},km,256))}
+const keyRaw=raw=>crypto.subtle.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
+/* Пароль шифрования открывает «обёртку» (e.w) с ключом файлов, поэтому смена пароля не требует перешифровывать файлы.
+   Старые репозитории без e.w работают как раньше: ключ файлов = ключ из пароля. Бросает ошибку при неверном пароле. */
+async function openEnc(pw,e){
+  const salt=b64d(e.s),K=await deriveKey(pw,salt);await aesD(K,b64d(e.c));
+  if(!e.w)return{dk:K,raw:null,salt};
+  const raw=await aesD(K,b64d(e.w));return{dk:await keyRaw(raw),raw,salt};
+}
 async function aesD(key,u8,aad){const p={name:'AES-GCM',iv:u8.subarray(0,12)};if(aad)p.additionalData=aad;return new Uint8Array(await crypto.subtle.decrypt(p,key,u8.subarray(12)))}
 const encOf=r=>{const x=repos.find(q=>q.name===r);return x&&x.enc};
 const encOn=r=>!!(r&&encOf(r)&&encOf(r).on);
@@ -1308,13 +1317,35 @@ async function ensureKey(r){
   const bioFn=bioEOn(r)?async()=>{bk=await bioELoad(r);return !!bk}:undefined;
   const pw=await askPass('Пароль шифрования «'+r+'»','password','',bioFn);if(pw===null)return false;
   if(pw===BIOOK&&bk){KEYS[r]=bk;decAll().then(render);jlog('login','отпечаток: шифрование '+r);return true}
-  try{const k=await deriveKey(pw,b64d(e.s));await aesD(k,b64d(e.c));KEYS[r]=k;decAll().then(render);setTimeout(()=>bioEOffer(r),400);return true}
+  try{const o=await openEnc(pw,e);KEYS[r]=o.dk;decAll().then(render);setTimeout(()=>bioEOffer(r),400);return true}
   catch(x){alert('Неверный пароль шифрования');return false}
 }
 async function setRepoEnc(r,enc){
   const x=repos.find(q=>q.name===r);
   const m=await withChat(()=>client.sendMessage(S.chat,RP+r+'\n'+ENC+JSON.stringify(enc)+(x.guest?'\n'+GU+(x.owner?' '+x.owner:''):'')));
   await withChat(()=>client.deleteMessages(S.chat,[x.id]));x.id=m.id;x.enc=enc;
+}
+async function changeEncPw(r){
+  if(!canPw(r)){alert('Менять пароли здесь нельзя: этот репозиторий создан не вами.');return}
+  const e=encOf(r);if(!e){alert('Репозиторий «'+r+'» не зашифрован.');return}
+  if(!hasCrypto()){alert('Шифрование недоступно: при таком способе открытия приложения браузер не даёт доступ к криптографии. Откройте приложение с хостинга по https.');return}
+  const a=await askPass('Текущий пароль шифрования «'+r+'»');if(a===null)return;
+  let raw;
+  try{const o=await openEnc(a,e);raw=o.raw||await deriveRaw(a,o.salt)}
+  catch(x){alert('Неверный пароль шифрования');return}
+  const n1=await askPass('Новый пароль шифрования для «'+r+'». Если забудете, файлы не восстановить');if(!n1)return;
+  const n2=await askPass('Повторите новый пароль');if(n1!==n2){alert('Пароли не совпали');return}
+  const salt=crypto.getRandomValues(new Uint8Array(16)),K2=await deriveKey(n1,salt),dk=await keyRaw(raw);
+  const ne={s:b64e(salt),c:b64e(await aesE(K2,te.encode('ok'))),w:b64e(await aesE(K2,raw)),k:b64e(await aesE(dk,te.encode('ok'))),on:e.on};
+  /* проверка до записи: новый пароль должен открыть ключ, а ключ — реальные зашифрованные файлы этого репозитория */
+  try{
+    const o=await openEnc(n1,ne),tf=files.find(f=>f.repo===r&&f.enc&&f.encName);
+    if(tf)await aesD(o.dk,b64d(tf.encName));
+  }catch(x){alert('Проверка не прошла, пароль не изменён: '+err(x));return}
+  await setRepoEnc(r,ne);
+  KEYS[r]=dk;bioEOff(r);
+  jlog('chg','шифрование: '+r);say('Пароль шифрования изменён. Файлы открываются как раньше');
+  try{drawRepos()}catch(x){}
 }
 async function forceEnc(r){
   if(!r)return true;
@@ -1985,6 +2016,7 @@ function openRepoMenu(r){
   rmRepo=r;const lk=lockOf(r,''),open=UN.has(r+'\n'),it=[];
   if(canPw(r)){it.push(lk?['chg','Сменить пароль','lock']:['set','Поставить пароль','lock']);
   if(lk)it.push(['rm','Снять пароль','unlock'])}
+  if(encOf(r)&&canPw(r))it.push(['cpe','Сменить пароль шифрования','lock']);
   if(lk&&window.PublicKeyCredential)it.push(bioOn(lk)?['bio-','Отключить отпечаток','finger']:['bio+','Включить отпечаток','finger']);
   if(encOf(r)&&window.PublicKeyCredential)it.push(bioEOn(r)?['bioe-','Отключить отпечаток для шифрования','finger']:['bioe+','Отпечаток вместо пароля шифрования','finger']);
   if(lk&&open)it.push(['cls','Закрыть на этом устройстве','lock']);
@@ -2028,6 +2060,7 @@ $('#rml').onclick=async e=>{
   try{
     if(a==='set'||a==='rm')await toggleLock(r,'');
     else if(a==='chg')await changeLock(r,'');
+    else if(a==='cpe')await changeEncPw(r);
     else if(a==='cls')closeRepo(r);
     else if(a==='bio+'){const l=lockOf(r,'');if(l){BIOSKIP=true;try{if(!UN.has(r+'\n')&&!await checkLock(l))return;if(await bioEnable(l))say('Отпечаток включён');drawRepos()}finally{setTimeout(()=>{BIOSKIP=false},1000)}}}
     else if(a==='bioe+'){if(!bioReady())return;BIOSKIP=true;try{if(await ensureKey(r)&&await bioEPut(r))say('Отпечаток для шифрования включён');drawRepos()}finally{setTimeout(()=>{BIOSKIP=false},1000)}}
@@ -2466,14 +2499,28 @@ async function newFolder(){
   }catch(x){ulog(`✖ Папку не создал: ${err(x)}`);say('Не удалось создать папку: '+err(x),1)}
 }
 $('#delf').onclick=async()=>{
-  const r=R();
-  if(files.some(f=>f.repo===r&&inTree(f.path,cur))){alert('В папке есть файлы. Сначала переместите или удалите их.');return}
-  if(!confirm(`Удалить пустую папку «${cur}»?`))return;
-  const mk=folders.filter(x=>x.repo===r&&inTree(x.path,cur)),lk=locks.filter(l=>l.r===r&&l.p&&inTree(l.p,cur)),ids=[...mk,...lk].map(x=>x.id);
+  const r=R(),t=cur;if(!t)return;
+  const fl=files.filter(f=>f.repo===r&&inTree(f.path,t)),mk=folders.filter(x=>x.repo===r&&inTree(x.path,t)),lk=locks.filter(l=>l.r===r&&l.p&&inTree(l.p,t)),od=ORD.filter(x=>x.r===r&&x.p&&inTree(x.p,t));
+  for(const l of lk){if(!await unlock(r,l.p))return}
+  const sub=allPaths(r).filter(x=>x!==t&&inTree(x,t)).length;
+  const msg=fl.length?`В папке «${t}» файлов: ${fl.length}`+(sub?`, вложенных папок: ${sub}`:'')+`. Удалить папку вместе со всеми файлами навсегда? Отменить это нельзя.`:`Удалить пустую папку «${t}»?`;
+  if(!confirm(msg))return;
+  const meta=[...mk,...lk].map(x=>x.id),ords=od.flatMap(x=>x.mids||[]).filter(Boolean),fids=fl.map(f=>f.id),done=new Set();let e0=null;
   try{
-    if(ids.length)await withChat(()=>client.deleteMessages(S.chat,ids));
-    folders=folders.filter(x=>!mk.includes(x));locks=locks.filter(l=>!lk.includes(l));jlog('fo-',(r||'Облако')+' / '+cur);cur=parentPath(cur);render();
-  }catch(x){say(err(x),1)}
+    /* сначала файлы, потом служебные сообщения папки: если оборвётся связь, папка останется и её можно удалить повторно */
+    for(let i=0;i<fids.length;i+=100){
+      say(`Удаляю ${Math.min(i+100,fids.length)} из ${fids.length}…`);
+      const part=fids.slice(i,i+100);await withChat(()=>client.deleteMessages(S.chat,part));part.forEach(x=>done.add(x));
+    }
+    const rest=[...meta,...ords];
+    for(let i=0;i<rest.length;i+=100){const part=rest.slice(i,i+100);await withChat(()=>client.deleteMessages(S.chat,part))}
+  }catch(x){e0=x}
+  files=files.filter(f=>!done.has(f.id));done.forEach(i=>C.delete(i));
+  if(e0){say(`Удалено файлов ${done.size} из ${fids.length}, папка осталась: `+err(e0),1);render();return}
+  folders=folders.filter(x=>!mk.includes(x));locks=locks.filter(l=>!lk.includes(l));ORD=ORD.filter(x=>!od.includes(x));
+  jlog('fo-',(r||'Облако')+' / '+t+(fids.length?' (файлов: '+fids.length+')':''));
+  cur=parentPath(t);render();try{saveIndex()}catch(x){}
+  say(fids.length?`Папка удалена вместе с файлами (${fids.length})`:'Папка удалена');
 };
 $('#fab').onclick=e=>{e.stopPropagation();const m=$('#fabm');m.hidden=!m.hidden;$('#fab').classList.toggle('open',!m.hidden)};
 const fabClose=()=>{$('#fabm').hidden=true;$('#fab').classList.remove('open')};
