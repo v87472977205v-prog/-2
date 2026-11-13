@@ -930,12 +930,17 @@ document.addEventListener('visibilitychange',()=>{
 });
 const ACT={up:'загрузил','del':'удалил',mv:'перенёс',ren:'переименовал','rep+':'создал репозиторий','rep-':'удалил репозиторий','fo+':'создал папку','fo-':'удалил папку',login:'вошёл',view:'открыл',play:'включил',dl:'скачал',lock:'поставил пароль:',unlock:'снял пароль:',chg:'сменил пароль:',badpw:'ввёл неверный пароль:','user+':'создал профиль','user-':'удалил профиль',cp:'скопировал',enc:'шифрование:',ord:'изменил порядок файлов:',key:'создал ключ для друга',out:'вышел из аккаунта',jclr:'очистил журнал',own:'включил хранение паролей',ann:'опубликовал оповещение','ann-':'удалил оповещение'};
 function openAdm(t){$('#admt').textContent=t;$('#adm').hidden=false}
-let fromSet=false;
-$('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки'){drawSettings();return}fromSet=false;$('#adm').hidden=true};
+let fromSet=false,admParent=null;
+$('#admx').onclick=()=>{if(fromSet&&admParent){admParent();return}fromSet=false;admParent=null;$('#adm').hidden=true};
 function drawSettings(){
-  fromSet=false;openAdm('Настройки');
+  fromSet=false;admParent=null;openAdm('Настройки');
   const LKB=`<div class="uc"><div class="un">Кнопка открытия репозитория</div><div class="us">Как открывать зашифрованный или запароленный репозиторий.</div><div class="row"><button class="chip${ld('lkstyle','round')==='slide'?'':' on'}" data-lks="round">Круглая</button><button class="chip${ld('lkstyle','round')==='slide'?' on':''}" data-lks="slide">Слайдер</button></div></div>`;
-  $('#admb').innerHTML=S.viewer?`<div class="stl"><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button></div><div style="padding:10px 14px">${LKB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button><button data-set="dirs">${icon('cloud')}<span>Директории</span></button></div><div style="padding:10px 14px">${LKB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
+  $('#admb').innerHTML=`<div class="stl"><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button>${S.viewer?'':`<button data-set="con">${icon('gear')}<span>Консоль администратора</span></button>`}</div><div style="padding:10px 14px">${LKB}</div>`;
+}
+function drawConsole(){
+  if(S.viewer){drawSettings();return}
+  fromSet=true;admParent=drawSettings;openAdm('Консоль администратора');
+  $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button><button data-set="dirs">${icon('cloud')}<span>Директории</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
 $('#admb').addEventListener('click',async e=>{
@@ -958,7 +963,9 @@ function openCov(){
 }
 const applyEq=()=>document.body.classList.toggle('noeq',ld('cveq','on')==='off');applyEq();
 $('#setb').onclick=drawSettings;
-$('#admb').addEventListener('click',e=>{const b=e.target.closest('[data-set]');if(!b)return;fromSet=true;({usr:openUsers,jrn:openJournal,key:makeKey,ann:openAnn,cov:openCov,dirs:openDirs})[b.dataset.set]()});
+$('#admb').addEventListener('click',e=>{const b=e.target.closest('[data-set]');if(!b)return;const k=b.dataset.set;
+  if(S.viewer&&k!=='cov')return;  /* консоль и всё из неё — только у владельца */
+  fromSet=true;admParent=k==='cov'?drawSettings:drawConsole;({con:drawConsole,usr:openUsers,jrn:openJournal,key:makeKey,ann:openAnn,cov:openCov,dirs:openDirs})[k]()});
 
 /* ---- объявления: пишет владелец, пользователи видят один раз ---- */
 const annDate=t=>new Date(t||Date.now()).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
@@ -3306,11 +3313,17 @@ $('#go').onclick=async()=>{
   catch(x){say('Не вышло: '+err(x),1)}
 };
 const makeKey=async()=>{
-  if(!S.apiId||!S.apiHash){alert('Сначала войдите в приложение');return}
+  if(S.viewer)return;
+  const id=((await uiPrompt('api_id (цифры с my.telegram.org)'))||'').replace(/\s/g,'');
+  if(!id)return;
+  if(!/^\d{3,12}$/.test(id)){alert('Неверный api_id: только цифры');return}
+  const hs=((await uiPrompt('api_hash (32 символа)'))||'').replace(/\s/g,'');
+  if(!hs)return;
+  if(!/^[0-9a-f]{32}$/i.test(hs)){alert('Неверный api_hash: нужно ровно 32 символа, цифры и буквы a–f');return}
   const ph=(await uiPrompt('Номер ВТОРОГО аккаунта (им будет пользоваться друг), например +79991234567')||'').replace(/[^\d+]/g,'');
   if(!ph)return;
   if(!/^\+\d{10,15}$/.test(ph)){alert('Неверный номер. Нужен формат +79991234567');return}
-  jlog('key','');const kd={i:S.apiId,h:S.apiHash,p:ph};let key;
+  jlog('key','');const kd={i:id,h:hs,p:ph};let key;
   try{key=await ck2enc(kd)}catch(e){key='CLK1.'+b64e(te.encode(JSON.stringify(kd)))}
   try{await navigator.clipboard.writeText(key);alert('Ключ скопирован. Отправьте его другу. С этим ключом друг сможет загружать, переносить и удалять файлы так же, как вы.\n\nПеред этим второй аккаунт должен быть АДМИНИСТРАТОРОМ канала «'+TITLE+'» (права: публикация, изменение и удаление сообщений). Когда друг нажмёт «Войти», код придёт в Telegram второго аккаунта: передайте его другу не через Telegram (SMS, звонок).')}
   catch(e){prompt('Скопируйте ключ целиком и отправьте другу',key)}
