@@ -513,7 +513,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
   <button class="ib2" id="pcol" aria-label="Свернуть плеер" data-ic="down"></button><canvas id="eq"></canvas>
   <div class="pr1"><div id="pt"></div><button class="ib2" id="pclose" aria-label="Закрыть плеер" data-ic="close"></button></div>
   <div class="pr2"><span id="pcur">0:00</span><input type="range" id="pseek" min="0" max="0" step="0.1" value="0"><span id="pdur">0:00</span></div>
-  <div class="pr3"><button class="ib2" id="pprev" aria-label="Предыдущий трек" data-ic="prev"></button><button class="ib2" id="prew" aria-label="Назад на 10 секунд" data-ic="rew"></button><button class="ib2 big" id="pplay" aria-label="Играть или пауза"></button><button class="ib2" id="pfwd" aria-label="Вперёд на 10 секунд" data-ic="fwd"></button><button class="ib2" id="pnext" aria-label="Следующий трек" data-ic="next"></button></div>
+  <div class="pr3"><button class="ib2" id="pprev" aria-label="Предыдущий трек" data-ic="prev"></button><button class="ib2 big" id="pplay" aria-label="Играть или пауза"></button><button class="ib2" id="pnext" aria-label="Следующий трек" data-ic="next"></button></div>
   <div class="pr4"><button id="pshuf">Перемешать</button><button id="prep">Повтор: нет</button><button id="pspd">1×</button><button id="pslp">Таймер сна</button></div>
 </div>
 <div id="rmn" hidden><div id="rml"></div></div>
@@ -1576,7 +1576,7 @@ function show(){document.body.classList.toggle('ro',!!S.viewer);
 }
 
 const go=async e=>{const d=e.target.closest('[data-go]');if(!d)return;const t=d.dataset.go;if(t&&!await unlock(R(),t))return;cur=t;selMode=false;sel.clear();$('#q').value='';render()};
-$('#repl').onclick=async e=>{const dm=e.target.closest('[data-rm]');if(dm){openRepoMenu(dm.dataset.rm);return}const b=e.target.closest('[data-r]');if(!b)return;const r=b.dataset.r;if(!await unlock(r,''))return;P.repo=r;sv('tgmp',P);cur='';selMode=false;sel.clear();$('#q').value='';render()};
+$('#repl').onclick=async e=>{const dm=e.target.closest('[data-rm]');if(dm){openRepoMenu(dm.dataset.rm);return}const b=e.target.closest('[data-r]');if(!b)return;const r=b.dataset.r;if(!await unlock(r,''))return;P.repo=r;sv('tgmp',P);cur='';selMode=false;sel.clear();$('#q').value='';render();closeDrawer()};
 async function newEncSetup(n){
   const a=await askPass('Код шифрования для «'+n+'». Если забудете, файлы не восстановить');if(!a)return null;
   const b=await askPass('Повторите код шифрования');if(a!==b){alert('Коды не совпали');return null}
@@ -1793,8 +1793,6 @@ function restoreLast(auto){
 }
 $('#pplay').onclick=()=>{if(loadingTrack){if(Date.now()-loadT0>4000)retryTrack();return}if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
 $('#pprev').onclick=()=>{if(au.currentTime>3){au.currentTime=0;return}slideNav(-1)};$('#pnext').onclick=()=>slideNav(1);
-$('#prew').onclick=()=>{au.currentTime=Math.max(0,au.currentTime-10)};
-$('#pfwd').onclick=()=>{au.currentTime=Math.min(au.duration||1e9,au.currentTime+10)};
 $('#pclose').onclick=()=>{au.pause();au.removeAttribute('src');au.load();pq=[];pi=-1;collapsePl();showPl(false);markPlaying()};
 $('#pseek').addEventListener('input',()=>{seeking=true;$('#pcur').textContent=fmt(+$('#pseek').value)});
 $('#pseek').addEventListener('change',()=>{au.currentTime=+$('#pseek').value;seeking=false});
