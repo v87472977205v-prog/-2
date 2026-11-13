@@ -707,7 +707,7 @@ const say=(t,e)=>{
   for(const s of['#st','#sst','#bootm']){$(s).textContent=t;$(s).classList.toggle('err',!!e)}
   if(t){TLOG.push({t:String(t),e:!!e,h:new Date().toTimeString().slice(0,8)});if(TLOG.length>80)TLOG.shift();if(termDraw()){$('#toast').hidden=true;return}}
   const T=$('#toast');
-  if(!ready||showSetup||!t){T.hidden=true;return}
+  if(!ready||showSetup||!t||(!e&&/^(Подключаюсь|Ищу канал архива|Обновляю архив)/.test(String(t)))){T.hidden=true;return}
   T.textContent=t;T.classList.toggle('err',!!e);T.hidden=false;
   clearTimeout(toastT);toastT=setTimeout(()=>{T.hidden=true},e?7000:3000);
 };
@@ -1310,7 +1310,6 @@ async function readFast(prog){
   return[...all.values()].sort((x,y)=>y.id-x.id);
 }
 async function refresh(){
-  say('Читаю архив…');
   const out=[],fol=[],reps=[],lks=[],usr=[],jr=[],jenc=[],ordp=[],ans=[],seen=new Set();let off,okk=null;
   const proc=m=>{
     if(seen.has(m.id))return;seen.add(m.id);
@@ -1331,14 +1330,13 @@ async function refresh(){
       }}
   };
   let fast=null;
-  try{fast=await readFast(n=>say('Читаю архив… '+n))}catch(x){fast=null}
+  try{fast=await readFast(()=>{})}catch(x){fast=null}
   if(fast){for(const m of fast)proc(m)}
   else{
     for(;;){
       const b=await withChat(()=>client.getHistory(S.chat,off?{limit:100,offsetId:off}:{limit:100}));
       const n0=seen.size;for(const m of b)proc(m);
       if(seen.size===n0)break;
-      say('Читаю архив… '+seen.size);
       off=Math.min(...b.map(m=>m.id));
     }
   }
