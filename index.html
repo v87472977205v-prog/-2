@@ -368,6 +368,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 .pr4{gap:8px;margin-top:6px}
 .pr4 button{background:color-mix(in srgb,var(--ink) 6%,transparent);border:0;color:var(--mute);padding:8px 15px;font:500 12.5px system-ui,sans-serif;border-radius:99px;transition:background .15s,color .15s}
 .pr4 .on{background:color-mix(in srgb,var(--acc) 20%,transparent);color:var(--acc)}
+#pl .pr4 button.on{background:var(--acc);color:var(--accink);font-weight:700;box-shadow:0 4px 14px color-mix(in srgb,var(--acc) 38%,transparent)}
 /* полный экран: колонка по центру, большая «сцена» с эквалайзером */
 #pl.full{background:radial-gradient(90% 50% at 50% 0%,color-mix(in srgb,var(--acc) 26%,transparent),transparent 75%),radial-gradient(80% 40% at 50% 100%,color-mix(in srgb,var(--acc) 12%,transparent),transparent 75%),var(--bg);padding:max(14px,env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));align-items:center}
 #pl.full>:where(:not(#ppr):not(#pgh)){width:100%;max-width:560px}
@@ -521,7 +522,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
     <div id="sortm" hidden></div><div id="fltm" hidden></div>
   </div>
   <div id="sq" hidden><span id="sqt"></span><button class="ib2" id="sqx" aria-label="Сбросить поиск" data-ic="close"></button></div>
-  <div id="selbar" hidden><div class="m" id="selc"></div><div class="row"><button id="sall">Все</button><button id="smv">Переместить</button><button id="sdl">Скачать</button><button class="del" id="srm">Удалить</button><button id="sx">Отмена</button></div></div>
+  <div id="selbar" hidden><div class="m" id="selc"></div><div class="row"><button id="sall">Все</button><button id="smv">Переместить</button><button id="sdir">В директорию</button><button id="sdl">Скачать</button><button class="del" id="srm">Удалить</button><button id="sx">Отмена</button></div></div>
   <div id="st"></div>
   <div id="list"></div>
   <button class="fab" id="fab" aria-label="Добавить" data-ic="plus"></button><input type="file" id="fi" multiple hidden>
@@ -673,8 +674,10 @@ function aheadIdx(pi,len,shuf,repm,sh,n,rnd=Math.random){
 
 const $=s=>document.querySelector(s);
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
-const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let S=ld('tgm',{}),files=[],folders=[],cur='',openId=null,ready=false,showSetup=true;
+const sv=(k,v)=>{try{localStorage.setItem(k==='tgpos'?k+KSUF:k,JSON.stringify(v))}catch(e){}};
+const inDir=()=>!!S.main&&S.chat!==S.main;
+const cvK=id=>inDir()?S.chat+':'+id:id;
+let S=ld('tgm',{}),KSUF=(S.main&&S.chat&&S.chat!==S.main)?'_'+S.chat:'',files=[],folders=[],cur='',openId=null,ready=false,showSetup=true;
 let lib,client,pid;
 const U={on:false,total:0,done:0,fin:0,ok:0,n:0,name:'',t0:0,lastP:0,got:false,cancel:false,waitMsg:'',retry:'',nextNo:1,tick:0,jobs:new Set(),byPid:new Map()};
 function upPaint(){
@@ -919,7 +922,7 @@ $('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки
 function drawSettings(){
   fromSet=false;openAdm('Настройки');
   const LKB=`<div class="uc"><div class="un">Кнопка открытия репозитория</div><div class="us">Как открывать зашифрованный или запароленный репозиторий.</div><div class="row"><button class="chip${ld('lkstyle','round')==='slide'?'':' on'}" data-lks="round">Круглая</button><button class="chip${ld('lkstyle','round')==='slide'?' on':''}" data-lks="slide">Слайдер</button></div></div>`;
-  $('#admb').innerHTML=S.viewer?`<div class="stl"><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button></div><div style="padding:10px 14px">${LKB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button></div><div style="padding:10px 14px">${LKB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
+  $('#admb').innerHTML=S.viewer?`<div class="stl"><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button></div><div style="padding:10px 14px">${LKB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button><button data-set="dirs">${icon('cloud')}<span>Директории</span></button></div><div style="padding:10px 14px">${LKB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
 $('#admb').addEventListener('click',async e=>{
@@ -942,7 +945,7 @@ function openCov(){
 }
 const applyEq=()=>document.body.classList.toggle('noeq',ld('cveq','on')==='off');applyEq();
 $('#setb').onclick=drawSettings;
-$('#admb').addEventListener('click',e=>{const b=e.target.closest('[data-set]');if(!b)return;fromSet=true;({usr:openUsers,jrn:openJournal,key:makeKey,ann:openAnn,cov:openCov})[b.dataset.set]()});
+$('#admb').addEventListener('click',e=>{const b=e.target.closest('[data-set]');if(!b)return;fromSet=true;({usr:openUsers,jrn:openJournal,key:makeKey,ann:openAnn,cov:openCov,dirs:openDirs})[b.dataset.set]()});
 
 /* ---- объявления: пишет владелец, пользователи видят один раз ---- */
 const annDate=t=>new Date(t||Date.now()).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
@@ -1184,7 +1187,9 @@ async function connect(){
     password:()=>ask(S.viewer?'Возьмите пароль двухэтапной проверки у владельца облака':'Пароль двухэтапной проверки','password')
   });
   await findChannel();
+  if(!S.main){S.main=S.chat;sv('tgm',S)}
   try{await refresh()}catch(e){
+    if(inDir()&&!S.viewer){S.chat=S.main;KSUF='';sv('tgm',S);try{await refresh();return}catch(e2){e=e2}}
     if(!ACC.test(err(e))||S.viewer)throw e;
     if(!confirm('Канал архива недоступен ('+err(e)+'). Создать новый канал «'+TITLE+'»? Старые файлы останутся в старом канале.'))throw e;
     await makeChannel();await refresh();
@@ -1224,6 +1229,7 @@ async function makeChannel(){
 }
 const ACC=/cannot be accessed|CHANNEL_INVALID|PEER_ID_INVALID|CHANNEL_PRIVATE/i;
 async function reload(){
+  if(inDir()){try{await client.getChat(S.chat)}catch(e){}return}
   try{
     const list=await client.getChats();
     for(const it of list){const c=it.chat||it;if(c&&c.title===TITLE){S.chat=c.id;sv('tgm',S);return}}
@@ -1640,8 +1646,8 @@ const COV=new Map(),CVA=new Map(),CVT=new Map(),CVQ={q:[],set:new Set(),run:fals
 const cvWebOn=()=>ld('cvweb','on')!=='off';
 const CVDB=()=>CVDB.p||(CVDB.p=new Promise((ok,no)=>{try{const r=indexedDB.open('oblachko-cov',1);r.onupgradeneeded=()=>r.result.createObjectStore('c');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}));
 const cvIO=(mode,fn)=>CVDB().then(db=>new Promise((ok,no)=>{const t=db.transaction('c',mode),q=fn(t.objectStore('c'));t.oncomplete=()=>ok(q&&q.result);t.onerror=()=>no(t.error);t.onabort=()=>no(t.error)}));
-const cvGet=id=>cvIO('readonly',s=>s.get(id)).catch(()=>null);
-const cvPut=(id,rec)=>cvIO('readwrite',s=>s.put(rec,id)).catch(()=>{});
+const cvGet=id=>cvIO('readonly',s=>s.get(cvK(id))).catch(()=>null);
+const cvPut=(id,rec)=>cvIO('readwrite',s=>s.put(rec,cvK(id))).catch(()=>{});
 const cvEqm='<span class="eqm"><i></i><i></i><i></i></span>';
 const CVG=new Map();
 function cvGen(id){
@@ -1902,7 +1908,7 @@ function render(){
   {const lst=(isLocked(R(),'')?[]:(q?files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&f.name.toLowerCase().includes(q)):files.filter(f=>f.repo===R()&&f.path===cur))).filter(ftOk);
    AM=P.view==='grid'&&lst.length>0&&lst.filter(isAud).length/lst.length>=.6;GR=P.view==='grid'&&!AM}
   $('#list').className=(GR?'grid':'')+(selMode?' selm':'');
-  $('#selbar').hidden=!selMode;$('#selc').textContent='Выбрано: '+sel.size;
+  $('#selbar').hidden=!selMode;$('#sdir').hidden=!!S.viewer;$('#selc').textContent='Выбрано: '+sel.size;
   $('#top').hidden=selMode;{const fb=selMode||fabBlocked();$('#fab').hidden=fb;if(fb)fabClose()}
   const qq=$('#q').value.trim();$('#sq').hidden=!qq||selMode;$('#sqt').textContent='Поиск: «'+qq+'»';
   ORDIDX=ordIdx(R(),cur);const cmp=(P.sort==='my'&&q)?SORTS.new:(SORTS[P.sort]||SORTS.new);
@@ -2020,7 +2026,7 @@ const au=new Audio();au.preload='auto';
 let pq=[],pi=-1,seeking=false;
 let LASTID=+ld('tglast',0)||0;
 let SHUF=false,REPM=0,SPDI=Math.max(0,Math.min(5,+ld('tgspd',0)||0)),SLP=0,slpT=0,lastSave=0;
-const SPDS=[1,1.25,1.5,1.75,2,.75],SLPS=[0,15,30,60],PS=ld('tgpos',{});
+const SPDS=[1,1.25,1.5,1.75,2,.75],SLPS=[0,15,30,60],PS=ld('tgpos'+KSUF,{});
 const applySpd=()=>{au.defaultPlaybackRate=au.playbackRate=SPDS[SPDI]};
 function drawPl4(){$('#pshuf').classList.toggle('on',SHUF);$('#prep').textContent=['Повтор: нет','Повтор: все','Повтор: один'][REPM];$('#prep').classList.toggle('on',REPM>0);$('#pspd').textContent=SPDS[SPDI]+'×';$('#pspd').classList.toggle('on',SPDI>0);$('#pslp').textContent=SLP?'Сон: '+SLP+' мин':'Таймер сна';$('#pslp').classList.toggle('on',!!SLP)}
 $('#pshuf').onclick=()=>{SHUF=!SHUF;SH={o:[],p:0,len:0};drawPl4();pfPlan()};
@@ -2659,7 +2665,7 @@ $('#list').onclick=e=>{
   else go(e);
 };
 function paintSel(){
-  $('#selbar').hidden=!selMode;$('#selc').textContent='Выбрано: '+sel.size;
+  $('#selbar').hidden=!selMode;$('#sdir').hidden=!!S.viewer;$('#selc').textContent='Выбрано: '+sel.size;
   $('#sall').textContent=curList.length&&curList.every(id=>sel.has(id))?'Снять':'Все';
   $('#top').hidden=selMode;{const fb=selMode||fabBlocked();$('#fab').hidden=fb;if(fb)fabClose()}
   $('#sq').hidden=!$('#q').value.trim()||selMode;
@@ -2796,6 +2802,115 @@ $('#sdl').onclick=async()=>{
   say('Готово');
 };
 $('#smv').onclick=()=>{if(sel.size){pickMode='batch';openPick(null)}};
+
+/* ---- директории: отдельные каналы архива, только для владельца ---- */
+let DIRS=[];
+async function dirList(){
+  const out=[],list=await client.getChats();
+  for(const it of list){
+    const c=it.chat||it;if(!c||!c.title)continue;
+    if(c.title===TITLE)out.push({id:c.id,name:'Основная',main:1});
+    else if(c.title.startsWith(TITLE+' · '))out.push({id:c.id,name:c.title.slice(TITLE.length+3)});
+  }
+  out.sort((a,b)=>(b.main?1:0)-(a.main?1:0)||a.name.localeCompare(b.name,'ru'));
+  return out;
+}
+async function openDirs(){
+  if(S.viewer)return;
+  openAdm('Директории');
+  $('#admb').innerHTML='<div style="padding:10px 14px"><div class="us">Загружаю…</div></div>';
+  let ds;try{ds=await dirList()}catch(e){$('#admb').innerHTML='<div style="padding:10px 14px"><div class="us">Не удалось получить список: '+esc(err(e))+'</div></div>';return}
+  if($('#admt').textContent!=='Директории')return;
+  DIRS=ds;
+  $('#admb').innerHTML=`<div style="padding:10px 14px"><div class="uc"><div class="un">Директории</div><div class="us">Каждая директория — отдельный приватный канал Telegram. Чем меньше в нём файлов, тем быстрее читается архив. Создавать директории и переносить в них файлы может только владелец; друзья видят только основную.</div><div class="row"><button class="p" id="dnew">+ Создать директорию</button></div></div><div class="un" style="margin:4px 0 8px">Ваши директории</div>${ds.map((d,i)=>{const on=String(d.id)===String(S.chat);return `<div class="uc"><div class="un">${esc(d.name)}${on?' · открыта':''}</div><div class="row">${on?'':`<button data-dopen="${i}">Открыть</button>`}</div></div>`}).join('')}<div class="us">Чтобы перенести файлы: нажмите кнопку выбора в списке, отметьте файлы, нажмите «В директорию» и выберите, куда.</div></div>`;
+}
+$('#admb').addEventListener('click',async e=>{
+  const o=e.target.closest('[data-dopen]');
+  if(o){const d=DIRS[+o.dataset.dopen];if(d){$('#adm').hidden=true;fromSet=false;await switchDir(d.id,d.name)}return}
+  if(e.target.closest('#dnew')){
+    const n=clean(await uiPrompt('Название директории','')||'').slice(0,80);if(!n)return;
+    if(n==='Основная'||DIRS.some(d=>d.name.toLowerCase()===n.toLowerCase())){alert('Директория с таким названием уже есть.');return}
+    try{say('Создаю директорию…');await client.createChannel(TITLE+' · '+n);try{await client.getChats()}catch(x){}say('Директория создана: '+n);openDirs()}
+    catch(x){say('Не получилось создать директорию: '+err(x),1)}
+  }
+});
+async function switchDir(id,name){
+  if(String(id)===String(S.chat))return;
+  const prev=S.chat;
+  try{if($('#pclose').onclick)$('#pclose').onclick()}catch(e){}
+  say('Открываю директорию'+(name?' «'+name+'»':'')+'…');
+  try{await cacheReset()}catch(e){}
+  C.clear();WARM.clear();for(const k of Object.keys(KEYS))delete KEYS[k];UN.clear();
+  COV.clear();CVT.clear();CVR.clear();CVDONE.clear();CVRM=[];CVQ.q.length=0;CVQ.set.clear();CVG.clear();
+  const load=cid=>{S.chat=cid;sv('tgm',S);KSUF=inDir()?'_'+S.chat:'';for(const k of Object.keys(PS))delete PS[k];Object.assign(PS,ld('tgpos'+KSUF,{}));P.repo='';sv('tgmp',P);cur='';selMode=false;sel.clear();files=[];folders=[];repos=[];locks=[];users=[];ORD=[];render()};
+  load(id);
+  try{await refresh();render();say('Директория открыта'+(name?': '+name:''))}
+  catch(e){say('Не удалось открыть директорию: '+err(e),1);load(prev);try{await refresh();render()}catch(x){}}
+}
+function pickDir(ds){return new Promise(res=>{
+  const o=document.createElement('div');o.id='dirpk';
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px';
+  o.innerHTML=`<div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;width:min(400px,100%);max-height:85vh;overflow:auto;font-family:system-ui,sans-serif"><div style="font-size:18px;font-weight:700;margin-bottom:10px">Куда переместить?</div>${ds.map((d,i)=>`<button data-i="${i}" style="width:100%;margin:4px 0">${esc(d.name)}</button>`).join('')}<button data-i="-1" style="width:100%;margin:10px 0 0">Отмена</button></div>`;
+  o.onclick=e=>{const b=e.target.closest('[data-i]');if(!b&&e.target!==o)return;o.remove();res(b?(ds[+b.dataset.i]||null):null)};
+  document.body.appendChild(o);
+})}
+async function dirScan(id){
+  const rs=new Set(),fo=new Set(),seen=new Set();let no=0,off;
+  for(;;){
+    const b=await withChat(()=>client.getHistory(id,off?{limit:100,offsetId:off}:{limit:100}));
+    if(!b||!b.length)break;
+    const n0=seen.size;
+    for(const m of b){
+      seen.add(m.id);const e=entry(m);
+      if(e){if(e.no>no)no=e.no;continue}
+      const t=m.text;if(typeof t!=='string'||!(t.startsWith(RP)||t.startsWith(FP)))continue;
+      const ls=t.split('\n'),rl=ls.find(l=>l.startsWith(RP)),pl=ls.find(l=>l.startsWith(FP)),r=rl?rl.slice(RP.length).trim():'';
+      if(pl)fo.add(r+'\n'+pl.slice(FP.length).trim());else if(rl)rs.add(r);
+    }
+    if(seen.size===n0)break;
+    off=Math.min(...b.map(m=>m.id));
+  }
+  return{rs,fo,no};
+}
+const dirFw=async fn=>{for(let t=0;;t++){try{return await withChat(fn)}catch(e){const m=/FLOOD_WAIT\D{0,12}(\d+)|wait of (\d+)/i.exec(err(e));if(!m||t>=3)throw e;for(let i=+(m[1]||m[2])+1;i>0;i--){say(`Telegram просит подождать: ${i} с`);await sleep(1000)}}}};
+async function moveToDir(d){
+  const fl=[...sel].map(id=>files.find(x=>x.id===id)).filter(Boolean);
+  if(!fl.length)return;
+  if(!confirm(`Переместить файлов: ${fl.length} в директорию «${d.name}»? Из текущей они удалятся. Друзья перестанут их видеть.`))return;
+  const src=S.chat,moved=[];let bad=0,e1='';
+  try{
+    say('Проверяю директорию «'+d.name+'»…');
+    const sc=await dirScan(d.id);let no=sc.no;
+    for(const r of new Set(fl.map(f=>f.repo).filter(Boolean))){
+      if(sc.rs.has(r))continue;const x=repos.find(q=>q.name===r);if(!x)continue;
+      await dirFw(()=>client.sendMessage(d.id,RP+r+(x.enc?'\n'+ENC+JSON.stringify(x.enc):'')+(x.guest?'\n'+GU+(x.owner?' '+x.owner:''):'')));sc.rs.add(r);
+    }
+    for(const f of fl){
+      if(!f.path)continue;let acc='';
+      for(const sg of f.path.split('/')){acc=acc?acc+'/'+sg:sg;const k=(f.repo||'')+'\n'+acc;if(sc.fo.has(k))continue;await dirFw(()=>client.sendMessage(d.id,(f.repo?RP+f.repo+'\n':'')+FP+acc));sc.fo.add(k)}
+    }
+    let i=0;
+    for(const f of fl){
+      say(`Перемещаю ${++i} из ${fl.length}…`);
+      try{const myNo=++no;await dirFw(()=>client.sendDocument(d.id,f.fid,{caption:caption(myNo,f.path,capName(f),f.repo),fileName:f.enc?'enc'+myNo+'.bin':f.name}));moved.push(f.id)}
+      catch(x){bad++;no--;if(!e1)e1=err(x)}
+      await sleep(400);
+    }
+  }catch(x){e1=e1||err(x);bad=bad||1}
+  try{for(let i=0;i<moved.length;i+=100)await withChat(()=>client.deleteMessages(src,moved.slice(i,i+100)))}
+  catch(x){say('Файлы скопированы, но удалить из текущей директории не вышло: '+err(x),1)}
+  const ms=new Set(moved);files=files.filter(f=>!ms.has(f.id));ms.forEach(i=>C.delete(i));
+  if(moved.length)jlog('mv',moved.length+' файл(ов) → директория «'+d.name+'»');
+  exitSel();
+  bad?say(`Перемещено ${moved.length} из ${fl.length}. Ошибка: ${e1}`,1):say('Перемещено в «'+d.name+'»: '+moved.length);
+}
+$('#sdir').onclick=async()=>{
+  if(S.viewer||!sel.size)return;
+  let ds;try{ds=(await dirList()).filter(d=>String(d.id)!==String(S.chat))}catch(e){say(err(e),1);return}
+  if(!ds.length){alert('Других директорий пока нет. Создайте её: Настройки → Директории.');return}
+  const d=await pickDir(ds);if(d)await moveToDir(d);
+};
+
 
 /* зашифрованные файлы привязаны к ключу своего репозитория */
 function encMoveBlock(fl,nr,rr){
