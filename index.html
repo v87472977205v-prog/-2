@@ -163,6 +163,20 @@ body.pl-on #fabm{bottom:calc(244px + env(safe-area-inset-bottom))}
 #pw{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
 #pw .pwb{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;width:min(380px,100%);font-family:system-ui,sans-serif}
 #pwt{font-weight:600;margin-bottom:6px}
+#pwx,#pw .pwlk,#pws{display:none}
+#pw.scr{background:var(--bgfx);z-index:35;padding:20px}
+#pw.scr #pwx{display:flex;position:fixed;left:14px;top:max(14px,env(safe-area-inset-top));width:44px;height:44px;border-radius:50%;align-items:center;justify-content:center;padding:0;background:transparent;border:1px solid var(--acc);color:var(--acc)}
+#pw.scr #pwx svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#pw.scr .pwb{background:rgba(26,36,32,.94);border:1px solid var(--line);border-radius:30px;padding:30px 22px 24px;width:min(420px,100%);text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+#pw.scr .pwlk{display:block;width:84px;height:84px;margin:0 auto 6px;color:var(--acc)}
+#pw.scr #pwt{font-size:23px;font-weight:600;color:var(--ink);margin:10px 0 4px}
+#pw.scr #pws:not([hidden]){display:block;color:var(--mute);font-size:14px;margin-bottom:6px}
+#pw.scr #pwi{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:16px 22px;font-size:19px;margin:16px 0 0;color:var(--ink)}
+#pw.scr #pwi::placeholder{color:var(--mute)}
+#pw.scr #pwi:focus{outline:none;border-color:var(--acc)}
+#pw.scr .row{margin:16px 0 0}#pw.scr #pwc{display:none}
+#pw.scr #pwo{width:100%;padding:16px;border-radius:99px;font-size:19px;font-weight:600;background:var(--acc);color:var(--accink);border-color:var(--acc)}
+#pw.scr #pwb{border-radius:99px;padding:14px;font-size:16px}
 #pwb{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:11px;border:1px solid var(--acc);border-radius:10px;background:transparent;color:var(--acc);font:inherit;font-size:15px}
 #pwb svg{width:22px;height:22px}
 .th{position:relative}.th video{width:100%;height:100%;object-fit:cover;pointer-events:none}.tile .th video{position:absolute;inset:0}
@@ -520,7 +534,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
   </div>
 </div>
 <div id="up" hidden><div class="r1"><span id="upn"></span><span id="upc"></span></div><div class="bar" id="upb"><i id="upi"></i></div><div class="r2"><span id="ups"></span><span class="upb"><button class="ib2" id="upl" aria-label="Журнал загрузки" data-ic="list"></button><button id="upx">Отмена</button></span></div></div>
-<div id="pw" hidden><div class="pwb"><div id="pwt"></div><input id="pwi" type="password" autocomplete="off"><button id="pwb" type="button" hidden></button><div class="row"><button id="pwc">Отмена</button><button class="p" id="pwo">ОК</button></div></div></div>
+<div id="pw" hidden><button id="pwx" type="button" aria-label="Назад" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div class="pwb"><svg class="pwlk" viewBox="0 0 64 64" aria-hidden="true"><path d="M21 29v-8a11 11 0 0 1 22 0v8" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><rect x="13" y="28" width="38" height="30" rx="5" fill="currentColor"/><circle cx="32" cy="40" r="4.2" fill="#1a2420"/><path d="M32 42v8" stroke="#1a2420" stroke-width="4" stroke-linecap="round"/></svg><div id="pwt"></div><div id="pws" hidden></div><input id="pwi" type="password" autocomplete="off"><button id="pwb" type="button" hidden></button><div class="row"><button id="pwc">Отмена</button><button class="p" id="pwo">ОК</button></div></div></div>
 <div id="toast" hidden></div>
 <div id="pick" hidden><div id="pickl"></div></div>
 
@@ -711,10 +725,12 @@ const isLocked=(r,p)=>!!blocker(r,p);
 function c53(s,seed){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0')}
 const hashPw=(pw,salt)=>{let h=salt+pw;for(let i=0;i<2000;i++)h=c53(h,i&7);return salt+':'+h};
 const BIOOK={};
-function askPass(title,type='password',init='',bio){return new Promise(res=>{
-  $('#pwt').textContent=title;const i=$('#pwi');i.type=type;i.value=init;$('#pw').hidden=false;
+function askPass(title,type='password',init='',bio,scr){return new Promise(res=>{
+  const pwEl=$('#pw');$('#pwt').textContent=scr?scr.t:title;const i=$('#pwi');i.type=type;i.value=init;
+  if(scr){pwEl.classList.add('scr');$('#pws').textContent=scr.s||'';$('#pws').hidden=!scr.s;i.placeholder='Введите код';$('#pwo').textContent='Разблокировать';$('#pwx').hidden=false;$('#pwx').onclick=()=>done(null)}
+  pwEl.hidden=false;
   const bb=$('#pwb');bb.hidden=!bio;
-  const done=v=>{gone=true;$('#pw').hidden=true;$('#pwo').onclick=$('#pwc').onclick=bb.onclick=null;i.onkeydown=null;i.type='password';bb.hidden=true;res(v)};
+  const done=v=>{gone=true;$('#pw').hidden=true;pwEl.classList.remove('scr');i.placeholder='';$('#pwo').textContent='ОК';$('#pwx').hidden=true;$('#pwx').onclick=null;$('#pwo').onclick=$('#pwc').onclick=bb.onclick=null;i.onkeydown=null;i.type='password';bb.hidden=true;res(v)};
   let busy=false,gone=false;
   const tryBio=async()=>{
     if(busy||gone)return;busy=true;
@@ -809,7 +825,7 @@ async function bioOffer(l){
 }
 async function checkLock(l){
   const useBio=bioOn(l);
-  const pw=await askPass(l.p?'Пароль папки «'+base(l.p)+'»':'Пароль репозитория «'+(l.r||'Облако')+'»','password','',useBio?bioAsk:undefined);
+  const pw=await askPass(l.p?'Пароль папки «'+base(l.p)+'»':'Пароль репозитория «'+(l.r||'Облако')+'»','password','',useBio?bioAsk:undefined,{t:l.p?'Папка заблокирована':'Репозиторий заблокирован',s:l.p?base(l.p):(l.r||'Облако')});
   if(pw===null)return false;
   if(pw===BIOOK){unAdd(l.r+'\n'+l.p,l.h);jlog('login','отпечаток: '+lkn(l.r,l.p));return true}
   if(hashPw(pw,l.h.split(':')[0])===l.h){unAdd(l.r+'\n'+l.p,l.h);setTimeout(()=>bioOffer(l),300);return true}
@@ -1512,6 +1528,9 @@ function drawFltMenu(){
   $('#fltb').classList.toggle('on',FT!=='all');
 }
 $('#tgl').onclick=e=>{e.stopPropagation();const t=$('#top'),o=t.classList.toggle('tl');$('#tgl').setAttribute('aria-expanded',o);if(!o){$('#sortm').hidden=true;$('#fltm').hidden=true}};
+const tlClose=()=>{$('#top').classList.remove('tl');$('#tgl').setAttribute('aria-expanded','false')};
+$('#tools').addEventListener('click',e=>{if(e.target.closest('button'))setTimeout(tlClose,180)});
+document.addEventListener('click',e=>{if(!e.target.closest('#top'))tlClose()});
 $('#fltb').onclick=e=>{e.stopPropagation();$('#sortm').hidden=true;$('#fltm').hidden=!$('#fltm').hidden};
 $('#fltm').onclick=e=>{const b=e.target.closest('[data-ft]');if(!b)return;FT=b.dataset.ft;$('#fltm').hidden=true;render()};
 document.addEventListener('click',e=>{if(!e.target.closest('#fltm,#fltb'))$('#fltm').hidden=true});
