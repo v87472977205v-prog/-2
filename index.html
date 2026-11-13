@@ -272,6 +272,7 @@ body.pl-on main{padding-bottom:190px}
 #pl.full #pcol{display:flex;order:0;align-self:flex-start}
 #pl.full #eq{display:block;order:1;flex:1;min-height:140px;width:100%;cursor:pointer}
 #pl.full .pr1{order:2;margin:10px 0}
+#pl:not(.full) #pt{touch-action:pan-y;will-change:transform}
 #pl.full #pt{font-size:19px;text-align:center;white-space:normal}
 #pl.full .pr2{order:3}#pl.full .pr3{order:4;margin-top:8px}
 #eq{-webkit-tap-highlight-color:transparent;outline:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -1744,7 +1745,7 @@ function kickPlay(tok){
   const k=()=>{if(tok!==playTok||loadingTrack||HOLD||!LOADPLAY)return;if(au.paused&&au.src&&!au.ended)au.play().catch(()=>{})};
   setTimeout(k,300);setTimeout(k,1500);setTimeout(k,4000);
 }
-function startPlayer(id){{const f0=files.find(x=>x.id===id);if(f0)jonce('play',f0)}expandPl();pq=audioList();SH={o:[],p:0,len:0};playAt(pq.findIndex(f=>f.id===id))}
+function startPlayer(id){{const f0=files.find(x=>x.id===id);if(f0)jonce('play',f0)}pq=audioList();SH={o:[],p:0,len:0};playAt(pq.findIndex(f=>f.id===id))}
 let failRun=0;const RETRIED=new Map();
 /* ---- подкачка: держим наготове следующие треки ----
    Пока играет текущий, в фоне по одному докачиваются следующие AHEAD штук (на диск устройства).
@@ -1878,6 +1879,21 @@ $('#pcol').onclick=collapsePl;
 $('#eq').onclick=()=>{if(loadingTrack){if(Date.now()-loadT0>4000)retryTrack();return}if(au.paused)au.play().catch(()=>{});else{HOLD=true;au.pause()}};
 $('#pt').onclick=()=>{if(!$('#pl').classList.contains('full'))expandPl()};
 window.addEventListener('resize',()=>{if($('#pl').classList.contains('full'))fitEq()});
+/* свайп по названию в свёрнутом плеере: влево — следующий трек, вправо — предыдущий */
+{let sx=0,sy=0,sm='',sd=0,on=false;const pt=$('#pt');
+pt.addEventListener('touchstart',e=>{on=false;sm='';if($('#pl').classList.contains('full')||sliding||pi<0)return;const t=e.touches[0];sx=t.clientX;sy=t.clientY;sd=0;on=true;pt.style.transition='none'},{passive:true});
+pt.addEventListener('touchmove',e=>{if(!on)return;const t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+  if(!sm){if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)*1.3)sm='h';else if(Math.abs(dy)>10){on=false;pt.style.transform='';return}else return}
+  sd=dx;pt.style.transform=`translateX(${dx}px)`;pt.style.opacity=String(Math.max(.25,1-Math.abs(dx)/260))},{passive:true});
+const fin=()=>{if(!on)return;on=false;const m=sm;sm='';
+  if(m!=='h'){pt.style.transform='';pt.style.opacity='';return}
+  const dir=sd<0?1:-1,k=Math.abs(sd)>60?(dir>0?peekNext():peekPrev()):-1;
+  if(k<0){pt.style.transition='transform .18s,opacity .18s';pt.style.transform='';pt.style.opacity='';return}
+  pt.style.transition='transform .14s,opacity .14s';pt.style.transform=`translateX(${dir>0?-60:60}px)`;pt.style.opacity='0';
+  setTimeout(()=>{playAt(k);pt.style.transition='none';pt.style.transform=`translateX(${dir>0?60:-60}px)`;
+    requestAnimationFrame(()=>{pt.style.transition='transform .2s,opacity .2s';pt.style.transform='';pt.style.opacity=''})},140)};
+pt.addEventListener('touchend',fin);pt.addEventListener('touchcancel',fin)}
+
 let fY=null,fX=0,fd=0,fm='',gdir=0,gidx=-1,sliding=false,gh=null;
 $('#pl').addEventListener('touchstart',e=>{
   fY=null;fm='';gdir=0;gidx=-1;if(sliding||!$('#pl').classList.contains('full')||e.target.closest('input,button'))return;
@@ -2803,14 +2819,18 @@ $('#out').onclick=async()=>{
 cPurge();setInterval(cPurge,3600e3);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}  /* просим браузер не стирать кэш при нехватке места */
 /* ---- кнопка «назад»: шаг назад по папкам, на главной спрашивает о выходе ---- */
-let guarded=false;
-function guard(){
-  if(guarded)return;guarded=true;
-  try{history.pushState({g:'s'},'');history.pushState({g:'a'},'')}catch(e){guarded=false}
-}
+let guarded=false;const HB=6;
+/* в истории браузера держим запас записей: каждое нажатие «назад» съедает одну, а мы тут же докладываем новую.
+   Даже если браузер пропустит часть записей, приложение остаётся на странице и просто идёт на шаг назад по пути. */
+const hIdx=()=>{const st=history.state;return st&&st.g==='s'?st.i:-1};
+function hFill(){try{let i=hIdx();while(i<HB){i++;history.pushState({g:'s',i},'')}}catch(e){guarded=false}}
+function guard(){if(!guarded)guarded=true;if(hIdx()<HB)hFill()}
 document.addEventListener('click',()=>{if(ready)guard()},true);
+document.addEventListener('pointerdown',()=>{if(ready&&guarded&&hIdx()<HB)hFill()},true);
 window.addEventListener('popstate',e=>{
-  if(!guarded||!e.state||e.state.g!=='s')return;
+  if(!guarded)return;
+  const st=e.state;if(st&&st.g!=='s')return;
+  const i=st?st.i:-1;
   if($('#pl').classList.contains('full'))collapsePl();
   else if(!$('#adm').hidden)$('#admx').onclick();
   else if(!$('#rmn').hidden)$('#rmn').hidden=true;
@@ -2824,8 +2844,8 @@ window.addEventListener('popstate',e=>{
   else if(showSetup&&ready){showSetup=false;show()}
   else if($('#q').value){$('#q').value='';render()}
   else if(cur){cur=parentPath(cur);render()}
-  else if(confirm('Вы точно хотите выйти из приложения?')){guarded=false;history.back();return}
-  try{history.pushState({g:'a'},'')}catch(x){}
+  else if(confirm('Вы точно хотите выйти из приложения?')){guarded=false;history.go(-(i+1));return}
+  hFill();
 });
 $('#aid').value=S.apiId||'';$('#ahash').value=S.apiHash||'';$('#phone').value=S.phone||'';
 if(S.apiId&&S.apiHash&&S.phone)$('#combo').value=S.apiId+' '+S.apiHash+' '+S.phone;
