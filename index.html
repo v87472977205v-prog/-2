@@ -647,6 +647,7 @@ const unAdd=(k,h)=>{UN.add(k);if(isFk(k)){FUN.set(k,h);return}UNS[k]=h;sv('tgun'
 const unDel=k=>{UN.delete(k);FUN.delete(k);delete UNS[k];sv('tgun',UNS)};
 function syncUN(){UN.clear();for(const k of Object.keys(UNS)){if(isFk(k)){delete UNS[k];continue}const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===UNS[k])UN.add(k);else delete UNS[k]}for(const[k,h]of[...FUN]){const i=k.indexOf('\n'),l=lockOf(k.slice(0,i),k.slice(i+1));if(l&&l.h===h)UN.add(k);else FUN.delete(k)}sv('tgun',UNS)}
 let P=ld('tgmp',{sort:'new',view:'grid',repo:''}),sel=new Set(),selMode=false,booting=false,lp=false,pickMode='one';
+if(P.sort==='no')P.sort='new';
 const SORTS={new:(a,b)=>b.date-a.date,old:(a,b)=>a.date-b.date,name:(a,b)=>a.name.localeCompare(b.name,'ru',{numeric:true}),no:(a,b)=>a.no-b.no,my:(a,b)=>{const x=ORDIDX.get(a.id),y=ORDIDX.get(b.id);return x===undefined&&y===undefined?a.date-b.date:x===undefined?1:y===undefined?-1:x-y}};
 const storageOK=(()=>{try{localStorage.setItem('_t','1');const ok=localStorage.getItem('_t')==='1';localStorage.removeItem('_t');return ok}catch(e){return false}})();
 let toastT;
@@ -1228,14 +1229,42 @@ async function forceEnc(r){
   await setRepoEnc(r,ne.enc);KEYS[r]=ne.k;jlog('enc',r+' код задан');return true;
 }
 
+/* быстрое чтение: страницы по 100 сообщений запрашиваются сразу по несколько штук, а не одна за другой.
+   Окно с offsetId=o отдаёт до 100 сообщений старше o, поэтому окна с шагом 100 вместе покрывают весь канал.
+   Если что-то пошло не так, вызывающий код читает архив по-старому, последовательно. */
+async function readFast(prog){
+  const first=await withChat(()=>client.getHistory(S.chat,{limit:100}));
+  if(!first.length)return[];
+  const all=new Map();for(const m of first)all.set(m.id,m);
+  const low=Math.min(...first.map(m=>m.id)),offs=[];
+  for(let o=low;o>1;o-=100)offs.push(o);
+  let k=0,fail=null;
+  const worker=async()=>{
+    while(!fail){
+      const j=k++;if(j>=offs.length)return;
+      let b=null;
+      for(let t=0;t<3&&!b;t++){
+        try{b=await withChat(()=>client.getHistory(S.chat,{limit:100,offsetId:offs[j]}))}
+        catch(e){
+          const m=/FLOOD_WAIT\D{0,12}(\d+)|wait of (\d+)/i.exec(err(e)),w=m?+(m[1]||m[2]):0;
+          if(w>30||t>=2){fail=e;return}
+          await sleep(w?(w+1)*1000:1200*(t+1));
+        }
+      }
+      if(!b){fail=new Error('пустой ответ');return}
+      for(const m of b)all.set(m.id,m);
+      if(prog)prog(all.size);
+    }
+  };
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  if(fail)throw fail;
+  return[...all.values()].sort((x,y)=>y.id-x.id);
+}
 async function refresh(){
   say('Читаю архив…');
   const out=[],fol=[],reps=[],lks=[],usr=[],jr=[],jenc=[],ordp=[],ans=[],seen=new Set();let off,okk=null;
-  for(;;){
-    const b=await withChat(()=>client.getHistory(S.chat,off?{limit:100,offsetId:off}:{limit:100}));
-    let nw=0;
-    for(const m of b){
-      if(seen.has(m.id))continue;seen.add(m.id);nw++;
+  const proc=m=>{
+    if(seen.has(m.id))return;seen.add(m.id);
       const e=entry(m);
       if(e)out.push(e);
       else{const t=m.text;if(typeof t==='string'){
@@ -1251,10 +1280,18 @@ async function refresh(){
           else if(rl){const el=ls.find(l=>l.startsWith(ENC));let en=null;try{if(el)en=JSON.parse(el.slice(ENC.length))}catch(x){}reps.push({id:m.id,name:rl.slice(RP.length).trim(),enc:en,guest:ls.some(l=>l.startsWith(GU)),owner:((ls.find(l=>l.startsWith(GU))||'').slice(GU.length)).trim()})}
         }
       }}
+  };
+  let fast=null;
+  try{fast=await readFast(n=>say('Читаю архив… '+n))}catch(x){fast=null}
+  if(fast){for(const m of fast)proc(m)}
+  else{
+    for(;;){
+      const b=await withChat(()=>client.getHistory(S.chat,off?{limit:100,offsetId:off}:{limit:100}));
+      const n0=seen.size;for(const m of b)proc(m);
+      if(seen.size===n0)break;
+      say('Читаю архив… '+seen.size);
+      off=Math.min(...b.map(m=>m.id));
     }
-    if(!nw)break;
-    say('Читаю архив… '+seen.size);
-    off=Math.min(...b.map(m=>m.id));
   }
   files=out;folders=fol;repos=reps;locks=lks;users=usr;JOUR=jr;JENC=jenc;ORD=ordBuild(ordp);ANN=ans.sort((a,b)=>a.id-b.id);ownkey=okk;syncUN();saveIndex();if(OWNPRIV)await jDecryptAll();
   if(R()&&!repos.some(x=>x.name===R()&&showRepo(x)))P.repo='';
@@ -1446,11 +1483,11 @@ function fileRow(f,showPath){
   const th=aud?`<div class="th cov" style="${coverStyle(f.name)}">${icon('music')}<span class="eqm"><i></i><i></i><i></i></span></div>`:`<div class="th" ${img?`data-th="${f.id}"`:''}>${esc(ext(f.name))}</div>`;
   if(GR){
     const cap=mediaT?`<div class="cap"><div class="tn">${esc(f.name)}</div></div>`:`<div class="tn">${esc(f.name)}</div><div class="m">${showPath?esc(f.path||'Корень'):size(f.size)}</div>`;
-    return`<div class="tile${mediaT?' media':''}${s}" data-o="${f.id}">${th}<span class="bd">${pad(f.no)}</span><span class="ck">✓</span>${cap}</div>`;
+    return`<div class="tile${mediaT?' media':''}${s}" data-o="${f.id}">${th}<span class="ck">✓</span>${cap}</div>`;
   }
-  if(aud)return`<div class="f trk${s}" data-o="${f.id}">${th}<div><b>${esc(f.name.replace(/\.[^.]+$/,''))}</b><div class="m">${showPath?esc(f.path||'Корень')+' · ':''}${size(f.size)} · ${pad(f.no)}</div></div><span class="go">${icon('play')}</span><span class="ck">✓</span></div>`;
+  if(aud)return`<div class="f trk${s}" data-o="${f.id}">${th}<div><b>${esc(f.name.replace(/\.[^.]+$/,''))}</b><div class="m">${showPath?esc(f.path||'Корень')+' · ':''}${size(f.size)}</div></div><span class="go">${icon('play')}</span><span class="ck">✓</span></div>`;
   return`<div class="f${s}" data-o="${f.id}">${th}
-    <div><b><span class="no">${pad(f.no)}</span>${esc(f.name)}</b><div class="m">${showPath?esc(f.path||'Корень')+' · ':''}${size(f.size)} ${new Date(f.date).toLocaleDateString('ru')}</div></div><span class="ck">✓</span></div>`;
+    <div><b>${esc(f.name)}</b><div class="m">${showPath?esc(f.path||'Корень')+' · ':''}${size(f.size)} ${new Date(f.date).toLocaleDateString('ru')}</div></div><span class="ck">✓</span></div>`;
 }
 function folderRow(p){
   const n=files.filter(f=>f.repo===R()&&inTree(f.path,p)).length,lk=lockOf(R(),p)?`<span class="lkb">${icon('lock')}</span>`:'';
@@ -1474,7 +1511,7 @@ function render(){
   drawFltMenu();
   $('#delf').hidden=!cur;
   $('#vmode').innerHTML=icon(P.view==='grid'?'list':'grid');drawSortMenu();
-  {const lst=(isLocked(R(),'')?[]:(q?files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&(f.name.toLowerCase().includes(q)||pad(f.no).includes(q)||String(f.no)===q)):files.filter(f=>f.repo===R()&&f.path===cur))).filter(ftOk);
+  {const lst=(isLocked(R(),'')?[]:(q?files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&f.name.toLowerCase().includes(q)):files.filter(f=>f.repo===R()&&f.path===cur))).filter(ftOk);
    AM=P.view==='grid'&&lst.length>0&&lst.filter(isAud).length/lst.length>=.6;GR=P.view==='grid'&&!AM}
   $('#list').className=(GR?'grid':'')+(selMode?' selm':'');
   $('#selbar').hidden=!selMode;$('#selc').textContent='Выбрано: '+sel.size;
@@ -1486,7 +1523,7 @@ function render(){
   if(!isLocked(R(),'')&&needKey(R())){html=''+lkScr('Репозиторий зашифрован','AES-256: LOCKED')+'<button class="lockbtn unk" aria-label="Ввести пароль шифрования"><span class="lk">'+icon('lock')+'</span><span class="lt">Потяните, чтобы открыть</span></button>'}
   else if(isLocked(R(),'')){html=''+lkScr('Репозиторий защищён паролем','ACCESS: PASSWORD')+'<button class="lockbtn unl" aria-label="Ввести пароль"><span class="lk">'+icon('lock')+'</span><span class="lt">Потяните, чтобы открыть</span></button>'}
   else if(q){
-    const L=files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&(f.name.toLowerCase().includes(q)||pad(f.no).includes(q)||String(f.no)===q)).filter(ftOk).sort(cmp);
+    const L=files.filter(f=>f.repo===R()&&!isLocked(f.repo,f.path)&&f.name.toLowerCase().includes(q)).filter(ftOk).sort(cmp);
     html=L.length?L.map(f=>fileRow(f,true)).join(''):'<div class="empty"><span class="big">🔍</span>Ничего не найдено</div>';
   }else{
     const subs=allPaths().filter(p=>parentPath(p)===cur);
@@ -1954,7 +1991,7 @@ $('#drawer').onclick=e=>{if(e.target.id==='drawer'||(e.target.closest('#dp butto
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')closeDrawer()});
 $('#sqx').onclick=()=>{$('#q').value='';render()};
 function drawSortMenu(){
-  $('#sortm').innerHTML=[['new','Сначала новые'],['old','Сначала старые'],['name','По названию'],['no','По номеру'],['my','Мой порядок']].map(([k,t])=>`<button data-s="${k}">${k===P.sort?icon('check'):'<i class="i"></i>'}${t}</button>`).join('');
+  $('#sortm').innerHTML=[['new','Сначала новые'],['old','Сначала старые'],['name','По названию'],['my','Мой порядок']].map(([k,t])=>`<button data-s="${k}">${k===P.sort?icon('check'):'<i class="i"></i>'}${t}</button>`).join('');
 }
 $('#sortb').onclick=e=>{e.stopPropagation();$('#fltm').hidden=true;$('#sortm').hidden=!$('#sortm').hidden};
 $('#sortm').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;P.sort=b.dataset.s;sv('tgmp',P);$('#sortm').hidden=true;render()};
@@ -2468,7 +2505,7 @@ async function showAt(i,dir){
   jonce('view',f);saveVid();vi=i;openId=f.id;z={s:1,x:0,y:0};
   $('#vw').hidden=false;$('#vmenu').hidden=true;$('#vw').classList.remove('hide');
   $('#vname').textContent=f.name;
-  $('#vsub').textContent=`${i+1} из ${curList.length} · ${pad(f.no)}`;
+  $('#vsub').textContent=`${i+1} из ${curList.length}`;
   const isImg=f.mime.startsWith('image/');
   stg.style.touchAction=isImg?'none':'auto';
   stg.innerHTML='<div class="vl">Загрузка…</div>';
@@ -2647,7 +2684,7 @@ $('#vmore').onclick=e=>{e.stopPropagation();$('#vmenu').hidden=!$('#vmenu').hidd
 $('#vmenu').onclick=async e=>{
   const a=e.target.dataset.a;if(!a)return;
   $('#vmenu').hidden=true;const f=curFile();if(!f)return;
-  if(a==='info')alert(`${f.name}\n${pad(f.no)}\nПапка: ${f.path||'Корень'}\nРазмер: ${size(f.size)}\nДата: ${new Date(f.date).toLocaleString('ru')}`);
+  if(a==='info')alert(`${f.name}\nПапка: ${f.path||'Корень'}\nРазмер: ${size(f.size)}\nДата: ${new Date(f.date).toLocaleString('ru')}`);
   if(a==='mv'){pickMode='one';openPick(f.path)}
   if(a==='rn'){
     const n=(await uiPrompt('Новое название файла',f.name)||'').replace(/[\r\n]+/g,' ').trim();
@@ -2682,7 +2719,7 @@ $('#vdl').onclick=async()=>{
 };
 $('#vrm').onclick=async()=>{
   const f=curFile();if(!f)return;
-  if(!confirm(`Удалить ${pad(f.no)} «${f.name}» навсегда?`))return;
+  if(!confirm(`Удалить «${f.name}» навсегда?`))return;
   try{await withChat(()=>client.deleteMessages(S.chat,[f.id]));files=files.filter(x=>x.id!==f.id);C.delete(f.id);jlog('del',jn(f));dropCur()}
   catch(x){alert(err(x))}
 };
