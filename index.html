@@ -917,7 +917,7 @@ let fromSet=false;
 $('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки'){drawSettings();return}fromSet=false;$('#adm').hidden=true};
 function drawSettings(){
   fromSet=false;openAdm('Настройки');
-  const CVB=`<div class="uc"><div class="un">Обложки музыки</div><div class="us">Сначала берутся из самого файла. Если в файле её нет, ищутся в интернете (iTunes) по названию трека: туда уходит только название.</div><div class="row"><button class="chip${cvWebOn()?' on':''}" data-cvw="on">Искать в интернете</button><button class="chip${cvWebOn()?'':' on'}" data-cvw="off">Только из файла</button></div><div class="row"><button id="cvx">Подобрать обложки заново</button></div></div>`;
+  const CVB=`<div class="uc"><div class="un">Обложки музыки</div><div class="us">Сначала берутся из самого файла. Если в файле её нет, ищутся в интернете (iTunes) по названию трека: туда уходит только название, и для зашифрованных файлов тоже. Чтобы ничего не уходило в сеть, выберите «Только из файла».</div><div class="row"><button class="chip${cvWebOn()?' on':''}" data-cvw="on">Искать в интернете</button><button class="chip${cvWebOn()?'':' on'}" data-cvw="off">Только из файла</button></div><div class="row"><button id="cvx">Подобрать обложки заново</button></div></div>`;
   const LKB=`<div class="uc"><div class="un">Кнопка открытия репозитория</div><div class="us">Как открывать зашифрованный или запароленный репозиторий.</div><div class="row"><button class="chip${ld('lkstyle','round')==='slide'?'':' on'}" data-lks="round">Круглая</button><button class="chip${ld('lkstyle','round')==='slide'?' on':''}" data-lks="slide">Слайдер</button></div></div>`;
   $('#admb').innerHTML=S.viewer?`<div style="padding:10px 14px">${LKB}${CVB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px">${LKB}${CVB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
@@ -1651,15 +1651,25 @@ function cvApply(f,rec){
 }
 const cvTerm=n=>dispName(n).replace(/[\[(][^\])]*[\])]/g,' ').replace(/\b(official|lyrics?|audio|video|clip|hd|hq|mp3)\b/gi,' ').replace(/^\s*\d{1,3}[\s.\-_)]+/,'').replace(/_+/g,' ').replace(/\s+/g,' ').trim();
 const cvToks=t=>(t.toLowerCase().replace(/ё/g,'е').match(/[\p{L}\p{N}]+/gu)||[]);
+function cvJsonp(url){return new Promise((ok,no)=>{const cb='cvj'+Date.now()+Math.floor(Math.random()*1e6),sc=document.createElement('script');let t=setTimeout(()=>{fin();no(new Error('timeout'))},12000);function fin(){clearTimeout(t);delete window[cb];sc.remove()}window[cb]=d=>{fin();ok(d)};sc.onerror=()=>{fin();no(new Error('net'))};sc.src=url+'&callback='+cb;document.head.appendChild(sc)})}
+async function cvItunes(term,cc){
+  const url='https://itunes.apple.com/search?media=music&entity=song&limit=8&term='+encodeURIComponent(term)+cc;
+  try{
+    const r=await fetch(url);
+    if(r.status===403||r.status===429){const e=new Error('limit');e.rate=1;throw e}
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(e){
+    if(e&&e.rate)throw e;
+    return await cvJsonp(url);
+  }
+}
 async function cvWeb(f){
   const term=cvTerm(f.name);if(term.length<3||cvToks(term).length<1)return null;
   const ft=new Set(cvToks(term));
   for(const cc of ['','&country=RU']){
     const w=Math.max(0,3200-(Date.now()-CVQ.webAt));if(w)await sleep(w);CVQ.webAt=Date.now();
-    const r=await fetch('https://itunes.apple.com/search?media=music&entity=song&limit=8&term='+encodeURIComponent(term)+cc);
-    if(r.status===403||r.status===429){const e=new Error('limit');e.rate=1;throw e}
-    if(!r.ok)continue;
-    const j=await r.json();let best=null,bs=0;
+    const j=await cvItunes(term,cc);if(!j)continue;let best=null,bs=0;
     for(const x of j.results||[]){
       const tt=cvToks(x.trackName||''),at=cvToks(x.artistName||'');if(!tt.length||!x.artworkUrl100)continue;
       const tin=tt.filter(w=>ft.has(w)).length/tt.length,ah=at.some(w=>ft.has(w));
@@ -1698,6 +1708,7 @@ async function cvHeavy(f,hi,rec){
   const web=cvWebOn();let blob=null,tag=null;
   if(C.has(f.id)){try{blob=await(await fetch(C.get(f.id))).blob()}catch(e){}}
   else if(!f.enc){const raw=await Promise.race([cGet(f.id),sleep(1500).then(()=>null)]);if(raw)blob=raw}
+  else if(KEYS[f.repo]){const raw=await Promise.race([cGet(f.id),sleep(1500).then(()=>null)]);if(raw&&raw.size<8e7){try{blob=await decBlob(f,[raw])}catch(e){}}}
   if(blob)tag=await cvTags(blob).catch(()=>null);
   else if(!f.enc&&client&&!OFFLINE){
     if(!hi&&(U.on||loadingTrack))throw new Error('busy');
@@ -1708,7 +1719,7 @@ async function cvHeavy(f,hi,rec){
   let out=null,tried=false;
   if(tag&&tag.pic){out={b:await cvShrink(new Blob([tag.pic.data],{type:tag.pic.mime})),k:'tag',a:tag.artist||'',fc:true,t:Date.now()}}
   else if(rec&&rec.k==='web'&&(rec.b||rec.u)&&!full){return}          /* уже есть обложка из интернета, а файл ещё не доступен — пока оставляем */
-  else if(web&&!f.enc&&Date.now()>=CVQ.cool){
+  else if(web&&(!f.enc||f.dec===1)&&Date.now()>=CVQ.cool){
     let w=null;
     try{w=await cvWeb(f);tried=true}catch(e){CVQ.cool=Date.now()+(e&&e.rate?90000:300000)}   /* лимит или нет доступа к iTunes: на время прекращаем, запись останется «не искали» */
     if(w){
@@ -2279,7 +2290,7 @@ const EDGE=32;
 document.addEventListener('touchstart',e=>{
   oX=null;
   if($('#app').hidden||!$('#drawer').hidden||!$('#vw').hidden||!$('#pick').hidden||selMode||$('#pl').classList.contains('full'))return;
-  if(e.touches.length!==1||e.target.closest('#crumbs,#sortm,#fltm,input,select'))return;
+  if(e.touches.length!==1||e.target.closest('#crumbs,#sortm,#fltm,#pl,input,select'))return;
   const t=e.touches[0];if(t.clientX<EDGE)return;oX=t.clientX;oY=t.clientY;od=0;oOn=false;
 },{passive:true});
 document.addEventListener('touchmove',e=>{
