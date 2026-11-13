@@ -454,6 +454,13 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 #ptw{display:contents}
 #pl:not(.full) #ptw{display:block;flex:1;min-width:0;overflow:hidden;position:relative}
 #ptg{display:none;position:absolute;left:0;top:0;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;will-change:transform}
+
+/* обложки */
+.th.cov{position:relative}
+.th.cov>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#pcv{display:none;flex:none;width:38px;height:38px;border-radius:8px;background:center/cover no-repeat var(--bg)}
+#pl:not(.full).hascv #pcv{display:block}
+#pl.full.cvbg #eq{background:linear-gradient(rgba(4,14,12,.38),rgba(4,14,12,.58)),var(--cv) center/cover no-repeat}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-v4-192.png" type="image/png">
@@ -538,7 +545,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 <div id="pl" hidden>
   <div id="ppr"><i id="ppi"></i></div>
   <button class="ib2" id="pcol" aria-label="Свернуть плеер" data-ic="down"></button><canvas id="eq"></canvas>
-  <div class="pr1"><div id="ptw"><div id="pt"></div><div id="ptg"></div></div><button class="ib2" id="pclose" aria-label="Закрыть плеер" data-ic="close"></button></div>
+  <div class="pr1"><div id="pcv"></div><div id="ptw"><div id="pt"></div><div id="ptg"></div></div><button class="ib2" id="pclose" aria-label="Закрыть плеер" data-ic="close"></button></div>
   <div class="pr2"><span id="pcur">0:00</span><input type="range" id="pseek" min="0" max="0" step="0.1" value="0"><span id="pdur">0:00</span></div>
   <div class="pr3"><button class="ib2" id="pprev" aria-label="Предыдущий трек" data-ic="prev"></button><button class="ib2 big" id="pplay" aria-label="Играть или пауза"></button><button class="ib2" id="pnext" aria-label="Следующий трек" data-ic="next"></button></div>
   <div class="pr4"><button id="pshuf">Перемешать</button><button id="prep">Повтор: нет</button><button id="pspd">1×</button><button id="pslp">Таймер сна</button></div>
@@ -910,12 +917,15 @@ let fromSet=false;
 $('#admx').onclick=()=>{if(fromSet&&$('#admt').textContent!=='Настройки'){drawSettings();return}fromSet=false;$('#adm').hidden=true};
 function drawSettings(){
   fromSet=false;openAdm('Настройки');
+  const CVB=`<div class="uc"><div class="un">Обложки музыки</div><div class="us">Сначала берутся из самого файла. Если в файле её нет, ищутся в интернете (iTunes) по названию трека: туда уходит только название.</div><div class="row"><button class="chip${cvWebOn()?' on':''}" data-cvw="on">Искать в интернете</button><button class="chip${cvWebOn()?'':' on'}" data-cvw="off">Только из файла</button></div><div class="row"><button id="cvx">Подобрать обложки заново</button></div></div>`;
   const LKB=`<div class="uc"><div class="un">Кнопка открытия репозитория</div><div class="us">Как открывать зашифрованный или запароленный репозиторий.</div><div class="row"><button class="chip${ld('lkstyle','round')==='slide'?'':' on'}" data-lks="round">Круглая</button><button class="chip${ld('lkstyle','round')==='slide'?' on':''}" data-lks="slide">Слайдер</button></div></div>`;
-  $('#admb').innerHTML=S.viewer?`<div style="padding:10px 14px">${LKB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px">${LKB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
+  $('#admb').innerHTML=S.viewer?`<div style="padding:10px 14px">${LKB}${CVB}</div>`:`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button></div><div style="padding:10px 14px">${LKB}${CVB}<div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
 $('#admb').addEventListener('click',async e=>{
   {const ks=e.target.closest('[data-lks]');if(ks){const v=ks.dataset.lks;sv('lkstyle',v);applyLks();document.querySelectorAll('[data-lks]').forEach(x=>x.classList.toggle('on',x.dataset.lks===v));return}}
+  {const cw=e.target.closest('[data-cvw]');if(cw){const v=cw.dataset.cvw;sv('cvweb',v);cvWebChanged();document.querySelectorAll('[data-cvw]').forEach(x=>x.classList.toggle('on',x.dataset.cvw===v));return}}
+  if(e.target.closest('#cvx')){if(confirm('Удалить сохранённые обложки и подобрать заново?'))cvReset();return}
   if(e.target.closest('#ulogb')){ulShow();return}
   if(e.target.closest('#appupd')){(async()=>{try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(x){}location.reload()})();return}
   const b=e.target.closest('#cachex');if(!b||b.disabled)return;
@@ -1518,6 +1528,234 @@ async function urlOf(f,noDisk){
   return C.get(f.id);
 }
 
+/*CV-PARSE-BEGIN*/
+/* ---- обложки: достаём картинку и исполнителя из тегов файла (mp3/ID3, flac, m4a) ---- */
+const cvSync=(b,o)=>((b[o]&127)<<21)|((b[o+1]&127)<<14)|((b[o+2]&127)<<7)|(b[o+3]&127);
+const cvUnsync=b=>{const o=new Uint8Array(b.length);let n=0;for(let i=0;i<b.length;i++){o[n++]=b[i];if(b[i]===255&&b[i+1]===0)i++}return o.subarray(0,n)};
+const cvStrEnd=(b,o,enc)=>{if(enc===1||enc===2){for(let i=o;i+1<b.length;i+=2)if(b[i]===0&&b[i+1]===0)return[i,2];return[b.length,0]}for(let i=o;i<b.length;i++)if(b[i]===0)return[i,1];return[b.length,0]};
+const cvText=(b,enc)=>{try{let l='utf-8';if(enc===0)l='latin1';else if(enc===1||enc===2){l=enc===2?'utf-16be':'utf-16le';if(b[0]===254&&b[1]===255){l='utf-16be';b=b.subarray(2)}else if(b[0]===255&&b[1]===254)b=b.subarray(2)}return new TextDecoder(l).decode(b).split('\0')[0].trim()}catch(e){return ''}};
+const cvImg=u=>u.length<12?'':u[0]===255&&u[1]===216&&u[2]===255?'image/jpeg':u[0]===137&&u[1]===80&&u[2]===78&&u[3]===71?'image/png':u[0]===71&&u[1]===73&&u[2]===70?'image/gif':(u[0]===82&&u[1]===73&&u[2]===70&&u[3]===70&&u[8]===87&&u[9]===69&&u[10]===66&&u[11]===80)?'image/webp':'';
+/* сколько байт занимает ID3-тег целиком (чтобы докачать только начало файла) */
+const cvId3Len=h=>h.length>=10&&h[0]===73&&h[1]===68&&h[2]===51?10+cvSync(h,6)+(h[5]&16?10:0):0;
+function cvId3(u){
+  if(u.length<10||u[0]!==73||u[1]!==68||u[2]!==51)return null;
+  const ver=u[3],fl=u[5],size=cvSync(u,6),want=10+size;
+  let body=u.subarray(10,Math.min(u.length,want)),auth=u.length>=want;
+  if(fl&128&&ver<4)body=cvUnsync(body);
+  let o=0;
+  if(fl&64&&body.length>4)o=ver===4?cvSync(body,0):4+((body[0]<<24)|(body[1]<<16)|(body[2]<<8)|body[3]);
+  const il=ver===2?3:4,hl=ver===2?6:10;
+  let pic=null,front=null,artist='';
+  while(o+hl<=body.length){
+    const id=String.fromCharCode(...body.subarray(o,o+il));
+    if(!/^[A-Z0-9]+$/.test(id))break;
+    const sz=ver===2?(body[o+3]<<16)|(body[o+4]<<8)|body[o+5]:ver===3?body[o+4]*16777216+((body[o+5]<<16)|(body[o+6]<<8)|body[o+7]):cvSync(body,o+4);
+    const fg=ver>2?body[o+9]:0,st=o+hl;
+    if(sz<=0)break;
+    if(st+sz>body.length){auth=false;break}
+    let d=body.subarray(st,st+sz);o=st+sz;
+    if(ver===3){if(fg&192)continue;if(fg&32)d=d.subarray(1)}
+    if(ver===4){if(fg&12)continue;if(fg&64)d=d.subarray(1);if(fg&1)d=d.subarray(4);if(fg&2||fl&128)d=cvUnsync(d)}
+    if(id==='APIC'||id==='PIC'){
+      const enc=d[0];let p=1,type;
+      if(id==='PIC'){p=4}else{const e=cvStrEnd(d,p,0);p=e[0]+e[1]}
+      type=d[p];p++;
+      const e2=cvStrEnd(d,p,enc),data=d.subarray(e2[0]+e2[1]),mime=cvImg(data);
+      if(mime&&!pic)pic={data,mime};
+      if(mime&&type===3&&!front)front={data,mime};
+    }else if((id==='TPE1'||id==='TP1')&&!artist&&d.length>1)artist=cvText(d.subarray(1),d[0]);
+  }
+  return{pic:front||pic,artist,auth};
+}
+async function cvFlac(b){
+  const u32=(d,o)=>d.getUint32(o);
+  let o=4,pic=null,front=null,artist='',auth=false;
+  for(;;){
+    if(o+4>b.size)break;
+    const h=new Uint8Array(await b.slice(o,o+4).arrayBuffer()),last=h[0]&128,type=h[0]&127,len=(h[1]<<16)|(h[2]<<8)|h[3];
+    if(o+4+len>b.size)break;
+    if(type===6||type===4){
+      const raw=new Uint8Array(await b.slice(o+4,o+4+len).arrayBuffer()),dv=new DataView(raw.buffer);
+      try{
+        if(type===6){
+          const pt=u32(dv,0),ml=u32(dv,4),dl=u32(dv,8+ml),p=12+ml+dl+16,n=u32(dv,p),data=raw.subarray(p+4,p+4+n),mime=cvImg(data);
+          if(mime&&!pic)pic={data,mime};if(mime&&pt===3&&!front)front={data,mime};
+        }else{
+          const vl=dv.getUint32(0,true);let p=4+vl;const c=dv.getUint32(p,true);p+=4;
+          for(let i=0;i<c&&p+4<=raw.length;i++){const l=dv.getUint32(p,true);p+=4;const t=new TextDecoder().decode(raw.subarray(p,p+l));p+=l;const m=/^artist=(.*)$/i.exec(t);if(m&&!artist)artist=m[1].trim()}
+        }
+      }catch(e){}
+    }
+    o+=4+len;
+    if(last){auth=true;break}
+  }
+  return{pic:front||pic,artist,auth};
+}
+function cvMoov(u){
+  const dv=new DataView(u.buffer,u.byteOffset,u.byteLength);let pic=null,artist='';
+  const box=(o,e,fn)=>{while(o+8<=e){const sz=dv.getUint32(o),t=String.fromCharCode(u[o+4],u[o+5],u[o+6],u[o+7]);if(sz<8||o+sz>e)break;fn(t,o+8,o+sz);o+=sz}};
+  const ilst=(s,e)=>box(s,e,(t,s2,e2)=>{
+    if(t==='covr'&&!pic)box(s2,e2,(t3,s3,e3)=>{if(t3==='data'){const d=u.subarray(s3+8,e3),m=cvImg(d);if(m)pic={data:d,mime:m}}});
+    else if(t==='\u00a9ART'&&!artist)box(s2,e2,(t3,s3,e3)=>{if(t3==='data')artist=new TextDecoder().decode(u.subarray(s3+8,e3)).trim()});
+  });
+  const meta=(s,e)=>box(s+4,e,(t,s2,e2)=>{if(t==='ilst')ilst(s2,e2)});
+  box(0,u.length,(t,s,e)=>{if(t==='udta')box(s,e,(t2,s2,e2)=>{if(t2==='meta')meta(s2,e2)});else if(t==='meta')meta(s,e)});
+  return{pic,artist,auth:true};
+}
+async function cvMp4(b){
+  let o=0;
+  while(o+8<=b.size){
+    const dv=new DataView(await b.slice(o,o+16).arrayBuffer());
+    let sz=dv.getUint32(0),hl=8;const t=String.fromCharCode(dv.getUint8(4),dv.getUint8(5),dv.getUint8(6),dv.getUint8(7));
+    if(sz===1&&dv.byteLength>=16){sz=dv.getUint32(8)*4294967296+dv.getUint32(12);hl=16}else if(sz===0)sz=b.size-o;
+    if(sz<hl)break;
+    if(t==='moov'){if(o+sz>b.size)return null;return cvMoov(new Uint8Array(await b.slice(o+hl,o+sz).arrayBuffer()))}
+    o+=sz;
+  }
+  return null;
+}
+/* blob — файл целиком или его начало; возвращает {pic:{data,mime}|null, artist, auth} или null, если формат не разобрать */
+async function cvTags(b){
+  const h=new Uint8Array(await b.slice(0,12).arrayBuffer());
+  if(h[0]===73&&h[1]===68&&h[2]===51){const n=cvId3Len(h);if(n>12e6)return{pic:null,artist:'',auth:true};return cvId3(new Uint8Array(await b.slice(0,Math.min(b.size,n)).arrayBuffer()))}
+  if(h[0]===102&&h[1]===76&&h[2]===97&&h[3]===67)return cvFlac(b);
+  if(h[4]===102&&h[5]===116&&h[6]===121&&h[7]===112)return cvMp4(b);
+  return null;
+}
+/*CV-PARSE-END*/
+
+/*CV-RUN-BEGIN*/
+/* ---- обложки: хранилище, подбор и показ ----
+   Порядок: тег в самом файле (если файл уже на устройстве или это mp3/flac — докачиваем только начало), иначе поиск в iTunes по названию. */
+const COV=new Map(),CVA=new Map(),CVT=new Map(),CVQ={q:[],set:new Set(),run:false,webAt:0,cool:0};
+const cvWebOn=()=>ld('cvweb','on')!=='off';
+const CVDB=()=>CVDB.p||(CVDB.p=new Promise((ok,no)=>{try{const r=indexedDB.open('oblachko-cov',1);r.onupgradeneeded=()=>r.result.createObjectStore('c');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}));
+const cvIO=(mode,fn)=>CVDB().then(db=>new Promise((ok,no)=>{const t=db.transaction('c',mode),q=fn(t.objectStore('c'));t.oncomplete=()=>ok(q&&q.result);t.onerror=()=>no(t.error);t.onabort=()=>no(t.error)}));
+const cvGet=id=>cvIO('readonly',s=>s.get(id)).catch(()=>null);
+const cvPut=(id,rec)=>cvIO('readwrite',s=>s.put(rec,id)).catch(()=>{});
+const cvEqm='<span class="eqm"><i></i><i></i><i></i></span>';
+const covInner=id=>(COV.get(id)?`<img alt="" src="${COV.get(id)}">`:icon('music'))+cvEqm;
+function cvPaint(id){document.querySelectorAll(`[data-cv="${id}"]`).forEach(el=>{el.innerHTML=covInner(id)})}
+function cvPlayer(f){
+  const u=f&&COV.get(f.id),pl=$('#pl');if(!pl)return;
+  $('#pcv').style.backgroundImage=u?`url("${u}")`:'';
+  $('#eq').style.setProperty('--cv',u?`url("${u}")`:'none');
+  pl.classList.toggle('hascv',!!u);pl.classList.toggle('cvbg',!!u);
+}
+function cvApply(f,rec){
+  if(COV.has(f.id)&&CVT.get(f.id)===rec.t)return;
+  const u=rec.b?URL.createObjectURL(rec.b):(rec.u||'');
+  CVT.set(f.id,rec.t);COV.set(f.id,u);if(rec.a)CVA.set(f.id,rec.a);
+  if(u)cvPaint(f.id);
+  if(pi>=0&&pq[pi]&&pq[pi].id===f.id){cvPlayer(f);msMeta(f)}
+}
+const cvTerm=n=>dispName(n).replace(/[\[(][^\])]*[\])]/g,' ').replace(/\b(official|lyrics?|audio|video|clip|hd|hq|mp3)\b/gi,' ').replace(/^\s*\d{1,3}[\s.\-_)]+/,'').replace(/_+/g,' ').replace(/\s+/g,' ').trim();
+const cvToks=t=>(t.toLowerCase().replace(/ё/g,'е').match(/[\p{L}\p{N}]+/gu)||[]);
+async function cvWeb(f){
+  const term=cvTerm(f.name);if(term.length<3||cvToks(term).length<1)return null;
+  const ft=new Set(cvToks(term));
+  for(const cc of ['','&country=RU']){
+    const w=Math.max(0,3200-(Date.now()-CVQ.webAt));if(w)await sleep(w);CVQ.webAt=Date.now();
+    const r=await fetch('https://itunes.apple.com/search?media=music&entity=song&limit=8&term='+encodeURIComponent(term)+cc);
+    if(r.status===403||r.status===429){const e=new Error('limit');e.rate=1;throw e}
+    if(!r.ok)continue;
+    const j=await r.json();let best=null,bs=0;
+    for(const x of j.results||[]){
+      const tt=cvToks(x.trackName||''),at=cvToks(x.artistName||'');if(!tt.length||!x.artworkUrl100)continue;
+      const tin=tt.filter(w=>ft.has(w)).length/tt.length,ah=at.some(w=>ft.has(w));
+      /* берём только уверенное совпадение: все слова названия есть в имени файла и совпал исполнитель (или в имени файла только название) */
+      if(tin>=1&&(ah||ft.size<=tt.length)&&tin+(ah?1:0)>bs){bs=tin+(ah?1:0);best=x}
+    }
+    if(best)return{url:best.artworkUrl100.replace(/\d+x\d+bb\.(jpg|png)$/,'600x600bb.jpg'),artist:best.artistName||''};
+  }
+  return null;
+}
+async function cvShrink(b){
+  try{
+    const bm=await createImageBitmap(b),k=Math.min(1,600/Math.max(bm.width,bm.height)),w=Math.max(1,Math.round(bm.width*k)),h=Math.max(1,Math.round(bm.height*k));
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#111';x.fillRect(0,0,w,h);x.drawImage(bm,0,0,w,h);if(bm.close)bm.close();
+    const o=await new Promise(r=>c.toBlob(r,'image/jpeg',.84));
+    return o&&(o.size<b.size||k<1)?o:b;
+  }catch(e){return b}
+}
+/* начало файла: для mp3 ровно размер ID3-тега, для flac первые 2 МБ; остальные форматы без полной загрузки не разобрать */
+async function cvHead(f){
+  const it=client.download(f.fid)[Symbol.asyncIterator]();let parts=[],n=0,need=10;
+  try{
+    for(;;){
+      const r=await stallP(it.next(),20000);if(r.done)break;
+      const c=r.value;parts.push(c);n+=c.length||c.byteLength||0;
+      if(need===10&&n>=10){
+        const h=new Uint8Array(await new Blob(parts).slice(0,10).arrayBuffer()),l=cvId3Len(h);
+        if(l)need=Math.min(l,12e6);else if(h[0]===102&&h[1]===76&&h[2]===97&&h[3]===67)need=2e6;else return null;
+      }
+      if(need>10&&n>=need)break;
+    }
+  }finally{try{const q=it.return&&it.return();q&&q.catch&&q.catch(()=>{})}catch(e){}}
+  return new Blob(parts);
+}
+async function cvHeavy(f,hi,rec){
+  const web=cvWebOn();let blob=null,tag=null;
+  if(C.has(f.id)){try{blob=await(await fetch(C.get(f.id))).blob()}catch(e){}}
+  else if(!f.enc){const raw=await Promise.race([cGet(f.id),sleep(1500).then(()=>null)]);if(raw)blob=raw}
+  if(blob)tag=await cvTags(blob).catch(()=>null);
+  else if(!f.enc&&client&&!OFFLINE){
+    if(!hi&&(U.on||loadingTrack))throw new Error('busy');
+    const hb=await cvHead(f).catch(()=>null);
+    if(hb)tag=await cvTags(hb).catch(()=>null);
+  }
+  const full=!!blob||!!(tag&&tag.auth);
+  let out=null,tried=false;
+  if(tag&&tag.pic){out={b:await cvShrink(new Blob([tag.pic.data],{type:tag.pic.mime})),k:'tag',a:tag.artist||'',fc:true,t:Date.now()}}
+  else if(rec&&rec.k==='web'&&(rec.b||rec.u)&&!full){return}          /* уже есть обложка из интернета, а файл ещё не доступен — пока оставляем */
+  else if(web&&!f.enc&&Date.now()>=CVQ.cool){
+    let w=null;
+    try{w=await cvWeb(f);tried=true}catch(e){CVQ.cool=Date.now()+(e&&e.rate?90000:300000)}   /* лимит или нет доступа к iTunes: на время прекращаем, запись останется «не искали» */
+    if(w){
+      try{const r=await fetch(w.url);if(!r.ok)throw 0;out={b:await cvShrink(await r.blob()),k:'web',a:w.artist,fc:false,t:Date.now()}}
+      catch(e){out={u:w.url,k:'web',a:w.artist,fc:false,t:Date.now()}}
+    }
+  }
+  if(!out)out={k:'none',w:tried?1:0,a:(tag&&tag.artist)||'',fc:full,t:Date.now()};
+  await cvPut(f.id,out);cvApply(f,out);
+}
+async function cvPump(){
+  if(CVQ.run)return;CVQ.run=true;
+  try{
+    while(CVQ.q.length){
+      const it=CVQ.q.shift(),f=it.f;
+      try{
+        if(!it.hi&&!document.querySelector(`[data-cv="${f.id}"]`))continue;     /* строка уже прокручена/перерисована — не тратим трафик */
+        await cvHeavy(f,it.hi,it.rec);await sleep(200);
+      }catch(e){
+        if(e&&/busy/.test(e.message||''))setTimeout(()=>document.querySelectorAll(`[data-cv="${f.id}"]`).forEach(el=>cvObs.observe(el)),8000);
+      }finally{CVQ.set.delete(f.id)}
+    }
+  }finally{CVQ.run=false}
+}
+async function cvEnsure(f,hi){
+  if(!f||!isAud(f))return;
+  if(!hi&&COV.has(f.id))return;
+  const rec=await cvGet(f.id),web=cvWebOn();
+  const fresh=rec&&(rec.b||rec.u||(rec.k==='none'&&Date.now()-rec.t<3*864e5&&(rec.w||!web)));
+  if(fresh)cvApply(f,rec);
+  const todo=!fresh||(hi&&rec.k!=='tag'&&!rec.fc&&C.has(f.id));
+  if(!todo||CVQ.set.has(f.id))return;
+  CVQ.set.add(f.id);hi?CVQ.q.unshift({f,hi,rec}):CVQ.q.push({f,hi,rec});cvPump();
+}
+const cvObs=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;cvObs.unobserve(e.target);
+  const f=files.find(x=>x.id==e.target.dataset.cv);if(f)cvEnsure(f,false);
+}),{rootMargin:'200px'});
+function cvShow(f){cvPlayer(f);cvEnsure(f,false)}
+async function cvReset(){
+  try{await cvIO('readwrite',s=>s.clear())}catch(e){}
+  COV.clear();CVA.clear();CVQ.q.length=0;CVQ.set.clear();
+  const f=pi>=0&&pq[pi];if(f)cvPlayer(f);
+  render();
+}
+function cvWebChanged(){for(const [k,v] of [...COV])if(!v)COV.delete(k);render()}
+/*CV-RUN-END*/
 const thumb=(f,u)=>f.mime.startsWith('video/')?`<video src="${u}#t=0.1" preload="metadata" muted playsinline></video><span class="pb">▶</span>`:`<img alt="" src="${u}">`;
 const obs=new IntersectionObserver(es=>es.forEach(async e=>{
   if(!e.isIntersecting)return;obs.unobserve(e.target);
@@ -1531,7 +1769,7 @@ const coverStyle=n=>{const h=hueOf(n),a=146+h%34,l1=24+(h>>3)%10,l2=10+(h>>5)%7;
 function fileRow(f,showPath){
   const s=sel.has(f.id)?' sel':'',aud=isAud(f),mediaT=f.mime.startsWith('image/')||f.mime.startsWith('video/');
   const img=(f.mime.startsWith('image/')&&f.size<=8e6)||(f.mime.startsWith('video/')&&f.size<=25e6);
-  const th=aud?`<div class="th cov" style="${coverStyle(f.name)}">${icon('music')}<span class="eqm"><i></i><i></i><i></i></span></div>`:`<div class="th" ${img?`data-th="${f.id}"`:''}>${esc(ext(f.name))}</div>`;
+  const th=aud?`<div class="th cov" data-cv="${f.id}" style="${coverStyle(f.name)}">${covInner(f.id)}</div>`:`<div class="th" ${img?`data-th="${f.id}"`:''}>${esc(ext(f.name))}</div>`;
   if(GR){
     const cap=mediaT?`<div class="cap"><div class="tn">${esc(f.name)}</div></div>`:`<div class="tn">${esc(f.name)}</div><div class="m">${showPath?esc(f.path||'Корень'):size(f.size)}</div>`;
     return`<div class="tile${mediaT?' media':''}${s}" data-o="${f.id}">${th}<span class="ck">✓</span>${cap}</div>`;
@@ -1591,6 +1829,7 @@ function render(){
   $('#pbtn').hidden=!(audioList().length||pi>=0||lastAud());
   markPlaying();
   document.querySelectorAll('[data-th]').forEach(el=>{const ff=files.find(x=>x.id==el.dataset.th);if(ff&&C.has(ff.id))el.innerHTML=thumb(ff,C.get(ff.id));else obs.observe(el)});
+  document.querySelectorAll('[data-cv]').forEach(el=>{const ff=files.find(x=>x.id==el.dataset.cv);if(ff&&!COV.has(ff.id))cvObs.observe(el)});
 }
 function show(){document.body.classList.toggle('ro',!!S.viewer);
   $('#boot').hidden=!booting;
@@ -1740,10 +1979,10 @@ async function playAt(i,auto=true,resume=false,force=false){
   /* листаем туда-сюда: загрузки музыки, которые уже не нужны, не должны тянуть канал */
   for(const j of DLJ.values())if(j.aud&&j.f.id!==f.id)j.pre=true;
   pfPlan();
-  showPl(true);markPlaying();setPlBtn();$('#pt').textContent=dispName(f.name);$('#pseek').value=0;$('#pcur').textContent='0:00';$('#pdur').textContent='…';
+  showPl(true);markPlaying();setPlBtn();$('#pt').textContent=dispName(f.name);cvShow(f);$('#pseek').value=0;$('#pcur').textContent='0:00';$('#pdur').textContent='…';
   try{
     const u=ready||await waitUrl(f,force);if(tok!==playTok)return;
-    const rp=resume?PS[f.id]:0;au.src=u;applySpd();if(rp>3)au.addEventListener('loadedmetadata',()=>{au.currentTime=rp},{once:true});
+    const rp=resume?PS[f.id]:0;au.src=u;cvEnsure(f,true);applySpd();if(rp>3)au.addEventListener('loadedmetadata',()=>{au.currentTime=rp},{once:true});
     if(LOADPLAY&&!HOLD)await stallP(au.play(),15000);
     failRun=0;RETRIED.delete(f.id);
     pfPlan();
@@ -1835,7 +2074,7 @@ function markPlaying(){
    состояние «играет» держится на время загрузки трека, обработчики перевешиваются при каждом треке и при возврате в приложение. */
 let HOLD=false,LOADPLAY=false;
 const msState=()=>{try{navigator.mediaSession.playbackState=((loadingTrack&&LOADPLAY&&!HOLD)||!au.paused)?'playing':'paused'}catch(e){}};
-function msMeta(f){try{if('mediaSession' in navigator)navigator.mediaSession.metadata=new MediaMetadata({title:f.name.replace(/\.[^.]+$/,''),artist:'Мой архив',album:'Облачко'})}catch(e){}}
+function msMeta(f){try{if('mediaSession' in navigator){const cu=COV.get(f.id);navigator.mediaSession.metadata=new MediaMetadata({title:f.name.replace(/\.[^.]+$/,''),artist:CVA.get(f.id)||'Мой архив',album:'Облачко',artwork:cu?[{src:cu,sizes:'512x512',type:'image/jpeg'}]:[]})}}catch(e){}}
 const msPos=()=>{try{if('mediaSession' in navigator&&au.duration>0&&isFinite(au.duration))navigator.mediaSession.setPositionState({duration:au.duration,playbackRate:au.playbackRate||1,position:Math.min(Math.max(0,au.currentTime),au.duration)})}catch(e){}};
 async function msPlay(){
   if(loadingTrack){HOLD=false;LOADPLAY=true;msState();return}   /* нажали «play», пока трек грузится — начнёт играть сразу после загрузки */
@@ -1976,6 +2215,7 @@ function ghostFor(idx){
   try{c.getContext('2d').drawImage(eq,0,0)}catch(e){}
   t.style.cssText=`position:absolute;left:${b.left-pr.left}px;top:${b.top-pr.top}px;width:${b.width}px;height:${b.height}px`;
   t.textContent=pq[idx]?dispName(pq[idx].name):'';
+  {const nu=pq[idx]&&COV.get(pq[idx].id);if(nu)c.style.cssText+=`;border-radius:30px;background:linear-gradient(rgba(4,14,12,.38),rgba(4,14,12,.58)),url("${nu}") center/cover no-repeat`}
   gh.style.display='block';
 }
 function snapSlide(){
@@ -2034,11 +2274,13 @@ const openDrawer=()=>{const dp=$('#dp');dp.style.transform='';dp.style.transitio
 const closeDrawer=()=>{$('#drawer').hidden=true;$('#q').blur()};
 $('#hb').onclick=openDrawer;
 let swiped=false,oX=null,oY=0,od=0,oOn=false;
+/* у левого края экрана свайп вправо — это системный жест «назад»: шторку оттуда не открываем, чтобы они не дрались */
+const EDGE=32;
 document.addEventListener('touchstart',e=>{
   oX=null;
   if($('#app').hidden||!$('#drawer').hidden||!$('#vw').hidden||!$('#pick').hidden||selMode||$('#pl').classList.contains('full'))return;
   if(e.touches.length!==1||e.target.closest('#crumbs,#sortm,#fltm,input,select'))return;
-  const t=e.touches[0];oX=t.clientX;oY=t.clientY;od=0;oOn=false;
+  const t=e.touches[0];if(t.clientX<EDGE)return;oX=t.clientX;oY=t.clientY;od=0;oOn=false;
 },{passive:true});
 document.addEventListener('touchmove',e=>{
   if(oX===null)return;
