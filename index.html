@@ -92,6 +92,26 @@ main{padding-bottom:100px}
 .i{width:22px;height:22px;display:inline-block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .ib2{background:none;border:0;color:var(--ink);width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;flex:none}
 #top{position:sticky;top:0;z-index:6;background:rgba(5,21,19,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;gap:2px;padding:6px 0;margin:0 -4px}
+#splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(120% 70% at 50% 30%,#0a2a25 0,#051513 55%,#030c0b 100%);transition:opacity .55s ease,visibility .55s}
+#splash.out{opacity:0;visibility:hidden}
+#splash .sc{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center}
+#splash .sc::before,#splash .sc::after{content:"";position:absolute;inset:8px;border-radius:50%;border:1.5px solid #5fc3a6;opacity:0;animation:spr 2.4s ease-out infinite}
+#splash .sc::after{animation-delay:1.2s}
+#splash svg{width:132px;height:132px;overflow:visible;filter:drop-shadow(0 0 14px rgba(95,195,166,.35))}
+#splash .cl{fill:rgba(95,195,166,0);stroke:#5fc3a6;stroke-width:2.6;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:spd 1.3s cubic-bezier(.5,0,.2,1) .15s forwards,spf .8s ease 1.2s forwards}
+#splash .ar{fill:none;stroke:#5fc3a6;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;opacity:0;animation:spa .5s ease 1.05s forwards,spu 1.5s ease-in-out 1.6s infinite}
+#splash .nm{margin-top:26px;font:600 20px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.42em;padding-left:.42em;color:#bfece0;opacity:0;transform:translateY(8px);animation:spn .7s ease 1.3s forwards}
+#splash .dt{display:flex;gap:7px;margin-top:22px;opacity:0;animation:spn .5s ease 1.6s forwards}
+#splash .dt i{width:6px;height:6px;border-radius:50%;background:#5fc3a6;animation:spb 1s ease-in-out infinite}
+#splash .dt i:nth-child(2){animation-delay:.15s}#splash .dt i:nth-child(3){animation-delay:.3s}
+@keyframes spd{to{stroke-dashoffset:0}}
+@keyframes spf{to{fill:rgba(95,195,166,.12)}}
+@keyframes spa{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes spu{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes spn{to{opacity:1;transform:none}}
+@keyframes spb{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes spr{0%{opacity:.55;transform:scale(.7)}100%{opacity:0;transform:scale(1.55)}}
+@media(prefers-reduced-motion:reduce){#splash *,#splash *::before,#splash *::after{animation-duration:.01s!important;animation-delay:0s!important}}
 #crumbs{flex:1;min-width:0;padding:0 4px}
 #tools{display:flex;align-items:center;gap:2px;flex:none;overflow:hidden;max-width:0;transition:max-width .32s cubic-bezier(.2,.8,.2,1)}
 #top.tl #tools{max-width:260px}
@@ -435,6 +455,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="sc"><svg viewBox="0 0 64 64"><path class="cl" pathLength="1" d="M17 46a11 11 0 0 1-1.6-21.9A17 17 0 0 1 48 23.5 11.6 11.6 0 0 1 48.5 46z"/><path class="ar" d="M32 41V28m-6 6l6-6 6 6"/></svg></div><div class="nm">ОБЛАЧКО</div><div class="dt"><i></i><i></i><i></i></div></div>
 
 <section id="setup">
   <div class="sttop"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M10 23a6.5 6.5 0 0 1-1-12.9A9 9 0 0 1 26 8.5 7 7 0 0 1 28 23z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="15" cy="15.5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M17.2 15.5h6m-2 0v2.2m-2.4-2.2v1.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>ОБЛАЧКО</span><svg class="shield" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1.5l9.5 3.6v8.1c0 6-4 10.4-9.5 13.3C6.5 23.6 2.5 19.2 2.5 13.2V5.1z" fill="currentColor"/><path d="M12 1.5l9.5 3.6v8.1c0 6-4 10.4-9.5 13.3z" fill="#0f1714" fill-opacity=".45"/></svg></div>
@@ -2871,6 +2892,14 @@ if(S.apiId&&S.apiHash&&(S.auto||S.chat)){
 }
 show();
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').then(r=>{document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')r.update().catch(()=>{})})}).catch(()=>{})}catch(e){}
+</script>
+<script>
+/* заставка: показывается сразу, уходит когда приложение готово (не раньше 1.8 с, чтобы анимация доиграла) */
+(function(){var t0=Date.now(),sp=document.getElementById('splash');if(!sp)return;
+function bye(){if(sp.classList.contains('out'))return;sp.classList.add('out');setTimeout(function(){if(sp.parentNode)sp.parentNode.removeChild(sp)},700)}
+var iv=setInterval(function(){var el=Date.now()-t0,bm=document.getElementById('bootm'),err=bm&&bm.classList.contains('err'),ok=false;
+try{ok=(typeof ready!=='undefined'&&ready&&typeof booting!=='undefined'&&!booting)||(typeof booting!=='undefined'&&!booting&&el>3500)}catch(e){}
+if((ok&&el>1800)||err||el>9000){clearInterval(iv);bye()}},120)})();
 </script>
 </body>
 </html>
