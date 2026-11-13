@@ -449,6 +449,11 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 #setup #aski:focus{box-shadow:0 0 0 2px rgba(46,230,203,.35),0 0 18px rgba(46,230,203,.35)}
 #setup #askb{flex:none;display:block;width:calc(100% - 36px);max-width:560px;height:68px;margin:0 auto calc(env(safe-area-inset-bottom) + 18px);padding:0;border:0;border-radius:16px;background:#0ff0d2;color:#04302a;font-weight:600;font-size:26px;font-family:inherit;box-shadow:0 0 22px rgba(15,240,210,.28)}
 @media (max-height:700px){#ask .askin{padding-top:calc(env(safe-area-inset-top) + 20px)}#ask .rglogo{width:84px;height:84px}#ask .rgt{margin-top:14px;font-size:36px}#setup #askl{margin-top:20px;font-size:22px}}
+
+/* свёрнутый плеер: название соседнего трека «подъезжает» вслед за пальцем */
+#ptw{display:contents}
+#pl:not(.full) #ptw{display:block;flex:1;min-width:0;overflow:hidden;position:relative}
+#ptg{display:none;position:absolute;left:0;top:0;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;will-change:transform}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-v4-192.png" type="image/png">
@@ -533,7 +538,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
 <div id="pl" hidden>
   <div id="ppr"><i id="ppi"></i></div>
   <button class="ib2" id="pcol" aria-label="Свернуть плеер" data-ic="down"></button><canvas id="eq"></canvas>
-  <div class="pr1"><div id="pt"></div><button class="ib2" id="pclose" aria-label="Закрыть плеер" data-ic="close"></button></div>
+  <div class="pr1"><div id="ptw"><div id="pt"></div><div id="ptg"></div></div><button class="ib2" id="pclose" aria-label="Закрыть плеер" data-ic="close"></button></div>
   <div class="pr2"><span id="pcur">0:00</span><input type="range" id="pseek" min="0" max="0" step="0.1" value="0"><span id="pdur">0:00</span></div>
   <div class="pr3"><button class="ib2" id="pprev" aria-label="Предыдущий трек" data-ic="prev"></button><button class="ib2 big" id="pplay" aria-label="Играть или пауза"></button><button class="ib2" id="pnext" aria-label="Следующий трек" data-ic="next"></button></div>
   <div class="pr4"><button id="pshuf">Перемешать</button><button id="prep">Повтор: нет</button><button id="pspd">1×</button><button id="pslp">Таймер сна</button></div>
@@ -1898,18 +1903,35 @@ $('#eq').onclick=()=>{if(loadingTrack){if(Date.now()-loadT0>4000)retryTrack();re
 $('#pt').onclick=()=>{if(!$('#pl').classList.contains('full'))expandPl()};
 window.addEventListener('resize',()=>{if($('#pl').classList.contains('full'))fitEq()});
 /* свайп по названию в свёрнутом плеере: влево — следующий трек, вправо — предыдущий */
-{let sx=0,sy=0,sm='',sd=0,on=false;const pt=$('#pt');
-pt.addEventListener('touchstart',e=>{on=false;sm='';if($('#pl').classList.contains('full')||sliding||pi<0)return;const t=e.touches[0];sx=t.clientX;sy=t.clientY;sd=0;on=true;pt.style.transition='none'},{passive:true});
+let miniGo=null;
+{let sx=0,sy=0,sm='',sd=0,on=false,gd=0,gk=-1,v=0,lx=0,lt=0;
+const pt=$('#pt'),pg=$('#ptg'),pw=$('#ptw'),GAP=28,W=()=>pw.clientWidth+GAP;
+const showG=k=>{const cs=getComputedStyle(pt);pg.style.font=cs.font;pg.style.letterSpacing=cs.letterSpacing;pg.style.color=cs.color;pg.textContent=pq[k]?dispName(pq[k].name):'';pg.style.display='block'};
+const hideG=()=>{pg.style.display='none';pg.style.transition='none'};
+/* перекидывание: текущее название уезжает, соседнее заезжает на его место */
+const commit=(dir,k)=>{sliding=true;const T='transform .24s ease',w=W();
+  pt.style.transition=pg.style.transition=T;
+  pt.style.transform=`translateX(${-dir*w}px)`;pg.style.transform='translateX(0)';
+  setTimeout(()=>{playAt(k);pt.style.transition='none';pt.style.transform='';hideG();
+    setTimeout(()=>{pt.style.transition='';sliding=false},40)},250)};
+miniGo=(dir,k)=>{gd=dir;showG(k);pg.style.transition='none';pg.style.transform=`translateX(${dir*W()}px)`;void pg.offsetWidth;commit(dir,k)};
+pt.addEventListener('touchstart',e=>{on=false;sm='';gd=0;gk=-1;if($('#pl').classList.contains('full')||sliding||pi<0)return;const t=e.touches[0];sx=lx=t.clientX;sy=t.clientY;lt=performance.now();v=0;sd=0;on=true;pt.style.transition='none'},{passive:true});
 pt.addEventListener('touchmove',e=>{if(!on)return;const t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;
   if(!sm){if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)*1.3)sm='h';else if(Math.abs(dy)>10){on=false;pt.style.transform='';return}else return}
-  sd=dx;pt.style.transform=`translateX(${dx}px)`;pt.style.opacity=String(Math.max(.25,1-Math.abs(dx)/260))},{passive:true});
+  const now=performance.now();v=(t.clientX-lx)/Math.max(1,now-lt);lx=t.clientX;lt=now;
+  sd=dx;const dir=dx<0?1:-1;
+  if(gd!==dir){gd=dir;gk=dir>0?peekNext():peekPrev();if(gk>=0)showG(gk);else hideG()}
+  const has=gk>=0;
+  pt.style.transform=`translateX(${has?dx:dx*.3}px)`;
+  if(has){pg.style.transition='none';pg.style.transform=`translateX(${dir>0?W()+dx:-W()+dx}px)`}
+},{passive:true});
 const fin=()=>{if(!on)return;on=false;const m=sm;sm='';
-  if(m!=='h'){pt.style.transform='';pt.style.opacity='';return}
-  const dir=sd<0?1:-1,k=Math.abs(sd)>60?(dir>0?peekNext():peekPrev()):-1;
-  if(k<0){pt.style.transition='transform .18s,opacity .18s';pt.style.transform='';pt.style.opacity='';return}
-  pt.style.transition='transform .14s,opacity .14s';pt.style.transform=`translateX(${dir>0?-60:60}px)`;pt.style.opacity='0';
-  setTimeout(()=>{playAt(k);pt.style.transition='none';pt.style.transform=`translateX(${dir>0?60:-60}px)`;
-    requestAnimationFrame(()=>{pt.style.transition='transform .2s,opacity .2s';pt.style.transform='';pt.style.opacity=''})},140)};
+  if(m!=='h'){pt.style.transform='';return}
+  const dir=sd<0?1:-1,fast=Math.abs(v)>.5&&Math.abs(sd)>20&&Math.sign(v)===Math.sign(sd);
+  if(gk>=0&&gd===dir&&(Math.abs(sd)>60||fast)){commit(dir,gk);return}
+  const T='transform .2s ease';pt.style.transition=T;pt.style.transform='';
+  if(pg.style.display==='block'){pg.style.transition=T;pg.style.transform=`translateX(${gd>0?W():-W()}px)`;setTimeout(hideG,210)}
+  setTimeout(()=>{pt.style.transition=''},220)};
 pt.addEventListener('touchend',fin);pt.addEventListener('touchcancel',fin)}
 
 let fY=null,fX=0,fd=0,fm='',gdir=0,gidx=-1,sliding=false,gh=null;
@@ -1977,7 +1999,8 @@ function commitSlide(dir,idx){
 function slideNav(dir){
   const idx=dir>0?peekNext():peekPrev();
   if(idx<0){if(dir<0)au.currentTime=0;return}
-  if(!$('#pl').classList.contains('full')||sliding){playAt(idx);return}
+  if(sliding||document.hidden){playAt(idx);return}
+  if(!$('#pl').classList.contains('full')){if(miniGo)miniGo(dir,idx);else playAt(idx);return}
   gdir=dir;gidx=idx;ghostFor(idx);
   gh.style.transition='none';gh.style.transform=`translateX(${dir>0?$('#pl').clientWidth:-$('#pl').clientWidth}px)`;void gh.offsetWidth;
   commitSlide(dir,idx);
