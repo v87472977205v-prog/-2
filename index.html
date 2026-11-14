@@ -3029,7 +3029,7 @@ const idxPaths=(ix,r)=>{
   }
   return[...s].sort((a,b)=>a.localeCompare(b,'ru'));
 };
-const lockedIn=(T,r,p)=>T.cur?isLocked(r,p):T.idx.locks.some(l=>l.r===r&&l.p===p);
+const lockedIn=(T,r,p)=>T.cur?isLocked(r,p):T.idx.locks.some(l=>l.r===r&&(l.p===''||(p!==''&&inTree(p,l.p))));
 
 /* ---- выбор назначения: директория → репозиторий → папка ---- */
 function pickTarget(o){return new Promise(res=>{
@@ -3038,7 +3038,17 @@ function pickTarget(o){return new Promise(res=>{
   const bx=document.createElement('div');
   bx.style.cssText='background:var(--card);width:100%;max-height:78vh;overflow:auto;border-radius:16px 16px 0 0;padding:10px;font-family:system-ui,sans-serif';
   ov.appendChild(bx);document.body.appendChild(ov);
-  let dirs=null,D={id:S.chat,name:'',cur:true},T=null,RR='',NR=null,step='';
+  let dirs=null,D={id:S.chat,name:'',cur:true},T=null,RR='',NR=null,KEY=null,step='';
+  /* пароль репозитория/папки (защита приложения): в чужой директории проверяем по сохранённому хэшу */
+  const gate=async(r,p)=>{
+    if(T.cur)return await unlock(r,p);
+    for(const l of T.idx.locks.filter(l=>l.r===r&&(l.p===''||(p!==''&&inTree(p,l.p))))){
+      let okp=false;
+      for(let k=0;k<3&&!okp;k++){const pw=await askPass(l.p?'Пароль папки «'+base(l.p)+'»':'Пароль репозитория «'+(r||'Облако')+'»');if(pw===null)return false;if(hashPw(pw,String(l.h).split(':')[0])===l.h)okp=true;else alert('Неверный пароль')}
+      if(!okp)return false;
+    }
+    return true;
+  };
   const finish=v=>{ov.remove();res(v)};
   const show=h=>{bx.innerHTML=h;bx.scrollTop=0};
   const head=(t,back)=>`<div style="display:flex;align-items:center;gap:8px;margin:2px 0 8px"><div style="flex:1;font-size:16px;font-weight:700">${t}</div>${back?'<button data-a="back">Назад</button>':''}<button data-a="x">Отмена</button></div>`;
@@ -3054,9 +3064,9 @@ function pickTarget(o){return new Promise(res=>{
     step='repos';
     const rows=[['','Облако',null]];
     for(const x of(T.cur?[...T.idx.repos.values()].filter(visRepo):[...T.idx.repos.values()]))rows.push([x.name,x.name,x.enc]);
-    const vis=rows.filter(([r])=>!lockedIn(T,r,''));
+    const vis=rows;
     let h=head('Куда: репозиторий<div class="us" style="font-weight:400">'+esc(dlabel())+'</div>',!!(o.dirStep||dirs));
-    h+=vis.map(([r,n,e],i)=>row('repo',i,(e&&e.on?'🔐 ':'')+esc(n),T.cur&&r===R())).join('');
+    h+=vis.map(([r,n,e],i)=>row('repo',i,(lockedIn(T,r,'')?'🔒 ':'')+(e&&e.on?'🔐 ':'')+esc(n),T.cur&&r===R())).join('');
     if(!T.cur&&!S.viewer)for(const n of(o.srcRepos||[]))if(n&&!T.idx.repos.has(n))h+=row('same',n,'＋ Создать «'+esc(n)+'» здесь (то же шифрование)');
     h+=row('newrepo','','＋ Новый репозиторий…');
     if(!S.viewer&&!o.dirStep)h+=row('dirs','','Другая директория…');
@@ -3065,14 +3075,14 @@ function pickTarget(o){return new Promise(res=>{
   const stepPaths=()=>{
     step='paths';
     let ps=NR?[]:idxPaths(T.idx,RR);
-    ps=ps.filter(p=>!(o.exclude&&T.cur&&RR===o.exclude.r&&inTree(p,o.exclude.p))&&!lockedIn(T,RR,p));
+    ps=ps.filter(p=>!(o.exclude&&T.cur&&RR===o.exclude.r&&inTree(p,o.exclude.p))  );
     bx._paths=['',...ps];
     let h=head('Куда: папка<div class="us" style="font-weight:400">'+esc(dlabel())+' › '+esc(RR||'Облако')+'</div>',true);
-    h+=bx._paths.map((p,i)=>row('path',i,p?'&nbsp;&nbsp;'.repeat(p.split('/').length-1)+'📁 '+esc(base(p)):'Корень репозитория')).join('');
+    h+=bx._paths.map((p,i)=>row('path',i,p?'&nbsp;&nbsp;'.repeat(p.split('/').length-1)+(lockedIn(T,RR,p)?'🔒 ':'📁 ')+esc(base(p)):'Корень репозитория')).join('');
     h+=row('newpath','','＋ Новая папка…');
     show(h);
   };
-  const choose=p=>finish({dir:D,cur:!!D.cur,idx:T.idx,repo:RR,path:p,newRepo:NR});
+  const choose=p=>finish({dir:D,cur:!!D.cur,idx:T.idx,repo:RR,path:p,newRepo:NR,key:KEY});
   bx.onclick=async e=>{
     const b=e.target.closest('[data-a]');if(!b)return;
     const a=b.dataset.a,i=b.dataset.i;
@@ -3087,14 +3097,23 @@ function pickTarget(o){return new Promise(res=>{
         try{T={cur:false,idx:await dirIndex(D.id)}}catch(x){alert('Не удалось прочитать директорию: '+err(x));return stepDirs()}
         return stepRepos();
       }
-      if(a==='repo'){RR=bx._rows[+i][0];NR=null;return stepPaths()}
-      if(a==='same'){RR=i;NR={name:i,mode:'same'};return stepPaths()}
+      if(a==='repo'){
+        const[rn,,en]=bx._rows[+i];
+        if(!await gate(rn,''))return;
+        let k=null;
+        if(en&&en.on){
+          if(T.cur){if(!await ensureKey(rn))return}
+          else{k=await askRepoKey(D.name,rn,en);if(!k)return}
+        }
+        RR=rn;NR=null;KEY=k;return stepPaths();
+      }
+      if(a==='same'){RR=i;NR={name:i,mode:'same'};KEY=null;return stepPaths()}
       if(a==='newrepo'){
         const n=clean(await uiPrompt('Название нового репозитория')||'');if(!n)return;
         if(n==='Облако'||T.idx.repos.has(n)){alert('Такой репозиторий уже есть');return}
-        RR=n;NR={name:n,mode:'new'};return stepPaths();
+        RR=n;NR={name:n,mode:'new'};KEY=null;return stepPaths();
       }
-      if(a==='path')return choose(bx._paths[+i]);
+      if(a==='path'){const p=bx._paths[+i];if(p&&!await gate(RR,p))return;return choose(p)}
       if(a==='newpath'){
         const n=(await uiPrompt('Название новой папки (можно вложенную: Учёба/Латынь)')||'').split('/').map(clean).filter(Boolean).join('/');
         if(n)return choose(n);
@@ -3177,6 +3196,7 @@ async function runXfer(o,tgt){
       const m=await dirFw(()=>client.sendMessage(tid,text));
       if(sameDir){repos.push({id:m.id,name:trepo,enc:tmeta,guest:nm==='new'?!!S.viewer:tguest,owner:nm==='new'?(S.viewer?S.guestUser||'':''):towner});if(dstKey)KEYS[trepo]=dstKey}
     }
+    if(dstOn&&!dstKey&&tgt.key)dstKey=tgt.key;
     if(dstOn&&!dstKey&&plan.some(p=>p.s==='re')){
       if(sameDir){if(!await ensureKey(trepo)){say('Перенос отменён: нужен пароль шифрования «'+trepo+'»',1);return null}dstKey=KEYS[trepo]}
       else{dstKey=await askRepoKey(tgt.dir.name,trepo,tmeta);if(!dstKey){say('Перенос отменён: нужен пароль шифрования «'+trepo+'»',1);return null}}
