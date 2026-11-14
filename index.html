@@ -250,7 +250,7 @@ body.pl-on #fabm{bottom:calc(244px + env(safe-area-inset-bottom))}
 #ulp pre{flex:1;overflow:auto;margin:0 0 10px;padding:10px;background:var(--bg);border-radius:10px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
 #ulp .ulr{display:flex;gap:8px}#ulp .ulr button{flex:1}
 #toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,520px);background:var(--ink);color:var(--bg);font:14px/1.35 system-ui,sans-serif;padding:10px 16px;border-radius:99px;z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.35);pointer-events:none;animation:tin .18s ease;text-align:center}
-#toast.err{background:var(--bad);color:#fff}
+#toast.err{background:var(--bad);color:#fff!important;font-weight:600}
 @keyframes tin{from{opacity:0;transform:translate(-50%,8px)}}
 .tile,.f{transition:transform .12s,box-shadow .12s}
 .tile:active,.f:active{transform:scale(.975)}
@@ -933,9 +933,11 @@ function drawRepos(){
   const rowH=([r,t])=>`<div class="rrow"><button class="rp${r===R()?' on':''}" data-r="${esc(r)}">${icon(r?'repo':'cloud')}<span>${esc(t)}</span>${lockOf(r,'')?`<span class="lkb">${icon(UN.has(r+'\n')?'unlock':'lock')}</span>`:''}</button><button class="rdots" data-rm="${esc(r)}" aria-label="Меню репозитория">${dots}</button></div>`;
   $('#repl').innerHTML=L.map(rowH).join('');
   /* отдельный раздел «Директории»: появляется только когда администратор дал доступ и он принят */
+  try{
   {const sh=repos.filter(x=>x.shared),grp=new Map();for(const x of sh){const k=x.dn||'Основная';if(!grp.has(k))grp.set(k,[]);grp.get(k).push(x)}
    $('#dsec').hidden=!sh.length;
    $('#dirl').innerHTML=[...grp].map(([dn,xs])=>`<div class="dgrp">${esc(dn)}</div>`+xs.map(x=>rowH([x.name,x.raw||'Облако'])).join('')).join('')}
+  }catch(e){}
   $('#fsec').hidden=!cur;$('#lkf').hidden=!cur||!canPw(R());$('#mvf').hidden=!cur;$('#rnf').hidden=!cur;$('#cpf').hidden=!cur;
   if(cur)$('#lkf').lastChild.textContent=lockOf(R(),cur)?'Снять пароль с папки':'Запаролить папку';
 }
@@ -1709,7 +1711,8 @@ async function refresh(){
   try{await loadShares()}catch(e){}
   if(R()&&!repos.some(x=>x.name===R()&&showRepo(x)))P.repo='';
   if(cur&&!allPaths().includes(cur))cur='';
-  annAuto();shAuto();
+  try{annAuto()}catch(e){}
+  try{shAuto()}catch(e){}
 }
 
 
