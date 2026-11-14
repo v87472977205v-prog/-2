@@ -114,7 +114,10 @@ main{padding-bottom:100px}
 @media(prefers-reduced-motion:reduce){#splash *,#splash *::before,#splash *::after{animation-duration:.01s!important;animation-delay:0s!important}}
 #crumbs{flex:1;min-width:0;padding:0 4px}
 #tools{display:flex;align-items:center;gap:2px;flex:none;overflow:hidden;max-width:0;transition:max-width .32s cubic-bezier(.2,.8,.2,1)}
-#top.tl #tools{max-width:260px}
+#top.tl #tools{max-width:310px}
+#gearb,#conb{display:none}body.own #gearb{display:flex}body.own #conb{display:flex}
+body.own #fsec,body.own #lkf,body.own #rnf,body.own #mvf,body.own #cpf,body.own #delf{display:none!important}
+.fsn{padding:4px 6px 12px;color:var(--mute);font:14px system-ui,sans-serif}
 #tools .ib2{opacity:0;transform:translateX(36px) scale(.5);transition:transform .34s cubic-bezier(.3,1.5,.5,1),opacity .2s}
 #top.tl #tools .ib2{opacity:1;transform:none}
 #top.tl #tools .ib2:nth-last-child(1){transition-delay:.02s}#top.tl #tools .ib2:nth-last-child(2){transition-delay:.06s}#top.tl #tools .ib2:nth-last-child(3){transition-delay:.1s}#top.tl #tools .ib2:nth-last-child(4){transition-delay:.14s}#top.tl #tools .ib2:nth-last-child(5){transition-delay:.18s}
@@ -517,6 +520,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
     <button class="ib2" id="selb" aria-label="Выбрать" data-ic="check"></button>
     <button class="ib2" id="vmode" aria-label="Вид"></button>
     <button class="ib2" id="pbtn" aria-label="Плеер" data-ic="music" hidden></button>
+    <button class="ib2" id="gearb" aria-label="Настройки папки" data-ic="gear"></button>
     </div>
     <button class="ib2" id="tgl" aria-label="Показать инструменты" aria-expanded="false" data-ic="back"></button>
     <div id="sortm" hidden></div><div id="fltm" hidden></div>
@@ -534,6 +538,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
   <div id="repl"></div>
   <div id="rbar"><button id="rsw" role="switch" aria-checked="false"><span>Все пользователи</span><span class="tg"></span></button></div>
   <button id="setb" data-ic="gear">Настройки</button>
+  <button id="conb" data-ic="users">Консоль</button>
   <div class="sec" id="fsec" hidden>Эта папка</div>
   <button id="lkf" hidden data-ic="lock">Пароль папки</button>
   <button id="rnf" hidden data-ic="edit">Переименовать папку</button>
@@ -898,6 +903,7 @@ async function toggleLock(r,p){
   locks.push({id:m.id,r,p,h});unAdd(r+'\n'+p,h);jlog('lock',lkn(r,p));say('Пароль установлен');render();setTimeout(()=>bioOffer({r,p,h}),400);
 }
 function drawRepos(){
+  document.body.classList.toggle('own',!S.viewer);
   $('#rsw').setAttribute('aria-checked',String(!!P.all));
   const L=[['','Облако'],...repos.filter(x=>showRepo(x)||x.name===R()).map(x=>[x.name,x.name+(x.owner&&x.owner!==S.guestUser?' · '+x.owner:(S.viewer&&!x.guest?' · владелец':''))])];
   const dots='<svg class="i" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
@@ -935,11 +941,11 @@ $('#admx').onclick=()=>{if(fromSet&&admParent){admParent();return}fromSet=false;
 function drawSettings(){
   fromSet=false;admParent=null;openAdm('Настройки');
   const LKB=`<div class="uc"><div class="un">Кнопка открытия репозитория</div><div class="us">Как открывать зашифрованный или запароленный репозиторий.</div><div class="row"><button class="chip${ld('lkstyle','round')==='slide'?'':' on'}" data-lks="round">Круглая</button><button class="chip${ld('lkstyle','round')==='slide'?' on':''}" data-lks="slide">Слайдер</button></div></div>`;
-  $('#admb').innerHTML=`<div class="stl"><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button>${S.viewer?'':`<button data-set="con">${icon('gear')}<span>Консоль администратора</span></button>`}</div><div style="padding:10px 14px">${LKB}</div>`;
+  $('#admb').innerHTML=`<div class="stl"><button data-set="cov">${icon('music')}<span>Обложки музыки</span></button></div><div style="padding:10px 14px">${LKB}</div>`;
 }
 function drawConsole(){
   if(S.viewer){drawSettings();return}
-  fromSet=true;admParent=drawSettings;openAdm('Консоль администратора');
+  fromSet=false;admParent=null;openAdm('Консоль администратора');
   $('#admb').innerHTML=`<div class="stl"><button data-set="usr">${icon('users')}<span>Пользователи</span></button><button data-set="jrn">${icon('list')}<span>Журнал действий</span></button><button data-set="key">${icon('lock')}<span>Ключ для друга</span></button><button data-set="ann">${icon('bell')}<span>Оповещения</span></button><button data-set="dirs">${icon('cloud')}<span>Директории</span></button></div><div style="padding:10px 14px"><div class="uc"><div class="un">Кэш файлов и музыки</div><div class="us" id="cachei">Считаю…</div><div class="us">Размер не ограничен. Хранится неделю после последнего прослушивания. Файлы в канале не затрагиваются.</div><div class="row"><button class="del" id="cachex">Сбросить кэш</button></div><div class="us" style="margin-top:10px">Если на этом устройстве старая версия приложения, обновите её. Вход и файлы не затрагиваются.</div><div class="row"><button id="appupd">Обновить приложение</button></div><div class="us" style="margin-top:10px">Что приложение делало при загрузке файлов и создании папок, по шагам.</div><div class="row"><button id="ulogb">Журнал загрузки</button></div></div></div>`;
   Promise.all([cacheInfo(),cacheQuota()]).then(([i,q])=>{const el=$('#cachei');if(el)el.textContent=(i.n?`Занимает ${size(i.size)} · файлов: ${i.n}`:'Пока пусто — 0 МБ')+(q?` · всего приложение использует ${size(q.used)} из ${size(q.quota)} доступных браузером`:'')});
 }
@@ -963,6 +969,31 @@ function openCov(){
 }
 const applyEq=()=>document.body.classList.toggle('noeq',ld('cveq','on')==='off');applyEq();
 $('#setb').onclick=drawSettings;
+
+/* ---- владелец: «Консоль» в шторке, шестерёнка папки в панели инструментов ---- */
+$('#conb').onclick=()=>{if(!S.viewer)drawConsole()};
+function openFolderSet(){
+  if(S.viewer)return;
+  const r=R(),c=cur;fromSet=false;admParent=null;
+  openAdm(c?'Папка «'+base(c)+'»':(r||'Облако'));
+  const it=[];
+  if(c){
+    if(canPw(r))it.push(['lkf','lock',lockOf(r,c)?'Снять пароль с папки':'Запаролить папку']);
+    it.push(['rnf','edit','Переименовать'],['mvf','move','Переместить'],['cpf','copy','Копировать'],['delf','trash','Удалить папку','del']);
+  }else{
+    it.push(['newf','folderplus','Новая папка']);
+    if(r)it.push(['repo','repo','Настройки репозитория']);
+  }
+  $('#admb').innerHTML=(c?'':'<div class="fsn">Вы в корне. Откройте папку, чтобы настроить её.</div>')+`<div class="stl">${it.map(([k,ic,tx,cl])=>`<button data-fs="${k}"${cl?` class="${cl}"`:''}>${icon(ic)}<span>${tx}</span></button>`).join('')}</div>`;
+}
+$('#gearb').onclick=e=>{e.stopPropagation();openFolderSet()};
+$('#admb').addEventListener('click',e=>{
+  const b=e.target.closest('[data-fs]');if(!b)return;
+  const k=b.dataset.fs;$('#adm').hidden=true;fromSet=false;admParent=null;
+  if(k==='repo')openRepoMenu(R());
+  else if(k==='newf')$('#fabd').click();
+  else $('#'+k).click();
+});
 $('#admb').addEventListener('click',e=>{const b=e.target.closest('[data-set]');if(!b)return;const k=b.dataset.set;
   if(S.viewer&&k!=='cov')return;  /* консоль и всё из неё — только у владельца */
   fromSet=true;admParent=k==='cov'?drawSettings:drawConsole;({con:drawConsole,usr:openUsers,jrn:openJournal,key:makeKey,ann:openAnn,cov:openCov,dirs:openDirs})[k]()});
@@ -2009,7 +2040,6 @@ async function makeRepo(n){
 $('#addrepo').onclick=async()=>{const n=clean(await uiPrompt('Название репозитория')||'');if(!n)return;if(n==='Облако'||repos.some(x=>x.name===n)){alert('Такой репозиторий уже есть');return}try{if(await makeRepo(n)){cur='';render()}}catch(x){say(err(x),1)}};
 $('#rsw').onclick=()=>{P.all=!P.all;if(R()&&!repos.some(x=>x.name===R()&&showRepo(x))){P.repo='';cur=''}sv('tgmp',P);render()};
 $('#lkf').onclick=()=>toggleLock(R(),cur).catch(x=>say(err(x),1));
-$('#mvf').onclick=()=>{pickMode='folder';openPick(null)};
 /* ---- меню репозитория (три точки) ---- */
 let rmRepo='';
 function openRepoMenu(r){
@@ -2868,7 +2898,6 @@ $('#sdl').onclick=async()=>{
   }
   say('Готово');
 };
-$('#smv').onclick=()=>{if(sel.size){pickMode='batch';openPick(null)}};
 
 /* ---- директории: отдельные каналы архива, только для владельца ---- */
 let DIRS=[];
@@ -2914,69 +2943,326 @@ async function switchDir(id,name){
   try{await refresh();render();say('Директория открыта'+(name?': '+name:''))}
   catch(e){say('Не удалось открыть директорию: '+err(e),1);load(prev);try{await refresh();render()}catch(x){}}
 }
-function pickDir(ds){return new Promise(res=>{
-  const o=document.createElement('div');o.id='dirpk';
-  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px';
-  o.innerHTML=`<div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;width:min(400px,100%);max-height:85vh;overflow:auto;font-family:system-ui,sans-serif"><div style="font-size:18px;font-weight:700;margin-bottom:10px">Куда переместить?</div>${ds.map((d,i)=>`<button data-i="${i}" style="width:100%;margin:4px 0">${esc(d.name)}</button>`).join('')}<button data-i="-1" style="width:100%;margin:10px 0 0">Отмена</button></div>`;
-  o.onclick=e=>{const b=e.target.closest('[data-i]');if(!b&&e.target!==o)return;o.remove();res(b?(ds[+b.dataset.i]||null):null)};
-  document.body.appendChild(o);
-})}
-async function dirScan(id){
-  const rs=new Set(),fo=new Set(),seen=new Set();let no=0,off;
+/*XFER-BEGIN*/
+/* ======== ПЕРЕНОС: директория → репозиторий → папка ========
+   Файлы, папки (с вложенными папками, пустыми папками и паролями папок) переносятся или копируются
+   в любую директорию, любой репозиторий и любую папку.
+   • Тот же ключ шифрования (или оба без шифрования) — файл не трогаем: меняем подпись или копируем по file_id.
+   • Другой ключ — файл скачивается, расшифровывается, шифруется ключом целевого репозитория (его пароль спрашиваем) и грузится заново.
+   • Копия ВСЕГДА проверяется (размер; для шифрованных — расшифровкой, для обычных — контрольной суммой),
+     и только после этого удаляется оригинал. Любая ошибка — оригинал остаётся на месте, битая копия удаляется. */
+const XF={on:false};
+const dirFw=async fn=>{for(let t=0;;t++){try{return await withChat(fn)}catch(e){const m=/FLOOD_WAIT\D{0,12}(\d+)|wait of (\d+)/i.exec(err(e));if(!m||t>=3)throw e;for(let i=+(m[1]||m[2])+1;i>0;i--){say(`Telegram просит подождать: ${i} с`);await sleep(1000)}}}};
+const shaHex=async u=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',u))].map(b=>b.toString(16).padStart(2,'0')).join('');
+
+/* шифрование «по ключу» (не по имени репозитория): нужно, чтобы перекладывать файлы между разными ключами */
+async function encBytesK(key,blob){
+  const CH=1<<20,len=blob.size,n=Math.max(1,Math.ceil(len/CH)),out=new Uint8Array(4+len+n*32),dv=new DataView(out.buffer);
+  out.set([84,71,69,50]);let p=4;
+  for(let i=0;i<n;i++){const part=new Uint8Array(await blob.slice(i*CH,(i+1)*CH).arrayBuffer()),c=await aesE(key,part,chunkAad(i,n));dv.setUint32(p,c.length);out.set(c,p+4);p+=4+c.length}
+  return out.subarray(0,p);
+}
+async function decBlobK(key,parts,type){
+  const all=await new Blob(parts).arrayBuffer(),u=new Uint8Array(all),dv=new DataView(all);
+  const v2=u[0]===84&&u[1]===71&&u[2]===69&&u[3]===50,v1=u[0]===84&&u[1]===71&&u[2]===69&&u[3]===49;
+  if(!v1&&!v2)throw new Error('Неизвестный формат шифрования');
+  const fr=[];let p=4;
+  while(p<u.length){const L=dv.getUint32(p);if(p+4+L>u.length)throw new Error('Файл повреждён (обрезан)');fr.push(u.subarray(p+4,p+4+L));p+=4+L}
+  const out=[];
+  for(let i=0;i<fr.length;i++)out.push(await aesD(key,fr[i],v2?chunkAad(i,fr.length):undefined));
+  return new Blob(out,{type:type||'application/octet-stream'});
+}
+const encNameK=async(key,name,type)=>b64e(await aesE(key,te.encode(JSON.stringify({n:name,m:type||''}))));
+async function plainMeta(f){const j=JSON.parse(td.decode(await aesD(KEYS[f.repo],b64d(f.encName))));return{name:j.n,mime:mimeOf(j.m||'application/octet-stream',j.n)}}
+/* открывается ли чужой репозиторий (его enc) уже имеющимся ключом файлов? тогда перешифровывать не нужно */
+async function sameFileKey(key,e){
+  try{const t=e.w?e.k:e.c;if(!t)return false;await aesD(key,b64d(t));return true}catch(x){return false}
+}
+async function askRepoKey(dirName,repo,e){
+  for(let t=0;t<3;t++){
+    const pw=await askPass('Пароль шифрования «'+repo+'»'+(dirName?' (директория '+dirName+')':''));
+    if(pw===null)return null;
+    try{return(await openEnc(pw,e)).dk}catch(x){alert('Неверный пароль шифрования')}
+  }
+  return null;
+}
+
+/* ---- индекс директории: репозитории (с шифрованием), папки, пароли папок, файлы ---- */
+function curIndex(){
+  let no=0;for(const f of files)if(f.no>no)no=f.no;
+  return{repos:new Map(repos.map(x=>[x.name,x])),fo:folders.map(x=>({r:x.repo,p:x.path})),locks:locks.map(l=>({id:l.id,r:l.r,p:l.p,h:l.h})),ents:files,no};
+}
+async function dirIndex(id){
+  const rp=new Map(),fo=[],lk=[],ents=[],seen=new Set();let no=0,off;
   for(;;){
     const b=await withChat(()=>client.getHistory(id,off?{limit:100,offsetId:off}:{limit:100}));
     if(!b||!b.length)break;
     const n0=seen.size;
     for(const m of b){
-      seen.add(m.id);const e=entry(m);
-      if(e){if(e.no>no)no=e.no;continue}
-      const t=m.text;if(typeof t!=='string'||!(t.startsWith(RP)||t.startsWith(FP)))continue;
+      if(seen.has(m.id))continue;seen.add(m.id);
+      const e=entry(m);
+      if(e){if(e.no>no)no=e.no;ents.push(e);continue}
+      const t=m.text;if(typeof t!=='string')continue;
+      if(t.startsWith(LK)){try{const j=JSON.parse(t.slice(LK.length));lk.push({id:m.id,r:j.r||'',p:j.p||'',h:j.h})}catch(x){}continue}
+      if(!(t.startsWith(RP)||t.startsWith(FP)))continue;
       const ls=t.split('\n'),rl=ls.find(l=>l.startsWith(RP)),pl=ls.find(l=>l.startsWith(FP)),r=rl?rl.slice(RP.length).trim():'';
-      if(pl)fo.add(r+'\n'+pl.slice(FP.length).trim());else if(rl)rs.add(r);
+      if(pl)fo.push({r,p:pl.slice(FP.length).trim()});
+      else if(rl){
+        const el=ls.find(l=>l.startsWith(ENC));let en=null;try{if(el)en=JSON.parse(el.slice(ENC.length))}catch(x){}
+        const gl=ls.find(l=>l.startsWith(GU));
+        rp.set(r,{id:m.id,name:r,enc:en,guest:!!gl,owner:gl?gl.slice(GU.length).trim():''});
+      }
     }
     if(seen.size===n0)break;
     off=Math.min(...b.map(m=>m.id));
   }
-  return{rs,fo,no};
+  return{repos:rp,fo,locks:lk,ents,no};
 }
-const dirFw=async fn=>{for(let t=0;;t++){try{return await withChat(fn)}catch(e){const m=/FLOOD_WAIT\D{0,12}(\d+)|wait of (\d+)/i.exec(err(e));if(!m||t>=3)throw e;for(let i=+(m[1]||m[2])+1;i>0;i--){say(`Telegram просит подождать: ${i} с`);await sleep(1000)}}}};
-async function moveToDir(d){
-  const fl=[...sel].map(id=>files.find(x=>x.id===id)).filter(Boolean);
-  if(!fl.length)return;
-  if(!confirm(`Переместить файлов: ${fl.length} в директорию «${d.name}»? Из текущей они удалятся. Друзья перестанут их видеть.`))return;
-  const src=S.chat,moved=[];let bad=0,e1='';
-  try{
-    say('Проверяю директорию «'+d.name+'»…');
-    const sc=await dirScan(d.id);let no=sc.no;
-    for(const r of new Set(fl.map(f=>f.repo).filter(Boolean))){
-      if(sc.rs.has(r))continue;const x=repos.find(q=>q.name===r);if(!x)continue;
-      await dirFw(()=>client.sendMessage(d.id,RP+r+(x.enc?'\n'+ENC+JSON.stringify(x.enc):'')+(x.guest?'\n'+GU+(x.owner?' '+x.owner:''):'')));sc.rs.add(r);
-    }
-    for(const f of fl){
-      if(!f.path)continue;let acc='';
-      for(const sg of f.path.split('/')){acc=acc?acc+'/'+sg:sg;const k=(f.repo||'')+'\n'+acc;if(sc.fo.has(k))continue;await dirFw(()=>client.sendMessage(d.id,(f.repo?RP+f.repo+'\n':'')+FP+acc));sc.fo.add(k)}
-    }
-    let i=0;
-    for(const f of fl){
-      say(`Перемещаю ${++i} из ${fl.length}…`);
-      try{const myNo=++no;await dirFw(()=>client.sendDocument(d.id,f.fid,{caption:caption(myNo,f.path,capName(f),f.repo),fileName:f.enc?'enc'+myNo+'.bin':f.name}));moved.push(f.id)}
-      catch(x){bad++;no--;if(!e1)e1=err(x)}
-      await sleep(400);
-    }
-  }catch(x){e1=e1||err(x);bad=bad||1}
-  try{for(let i=0;i<moved.length;i+=100)await withChat(()=>client.deleteMessages(src,moved.slice(i,i+100)))}
-  catch(x){say('Файлы скопированы, но удалить из текущей директории не вышло: '+err(x),1)}
-  const ms=new Set(moved);files=files.filter(f=>!ms.has(f.id));ms.forEach(i=>C.delete(i));
-  if(moved.length)jlog('mv',moved.length+' файл(ов) → директория «'+d.name+'»');
-  exitSel();
-  bad?say(`Перемещено ${moved.length} из ${fl.length}. Ошибка: ${e1}`,1):say('Перемещено в «'+d.name+'»: '+moved.length);
-}
-$('#sdir').onclick=async()=>{
-  if(S.viewer||!sel.size)return;
-  let ds;try{ds=(await dirList()).filter(d=>String(d.id)!==String(S.chat))}catch(e){say(err(e),1);return}
-  if(!ds.length){alert('Других директорий пока нет. Создайте её: Настройки → Директории.');return}
-  const d=await pickDir(ds);if(d)await moveToDir(d);
+const idxPaths=(ix,r)=>{
+  const s=new Set();
+  for(const p of[...ix.fo.filter(x=>x.r===r).map(x=>x.p),...ix.ents.filter(e=>(e.repo||'')===r).map(e=>e.path||'')]){
+    let a='';for(const g of p.split('/')){if(!g)continue;a=a?a+'/'+g:g;s.add(a)}
+  }
+  return[...s].sort((a,b)=>a.localeCompare(b,'ru'));
 };
+const lockedIn=(T,r,p)=>T.cur?isLocked(r,p):T.idx.locks.some(l=>l.r===r&&l.p===p);
+
+/* ---- выбор назначения: директория → репозиторий → папка ---- */
+function pickTarget(o){return new Promise(res=>{
+  const ov=document.createElement('div');ov.id='xpk';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;display:flex;align-items:flex-end';
+  const bx=document.createElement('div');
+  bx.style.cssText='background:var(--card);width:100%;max-height:78vh;overflow:auto;border-radius:16px 16px 0 0;padding:10px;font-family:system-ui,sans-serif';
+  ov.appendChild(bx);document.body.appendChild(ov);
+  let dirs=null,D={id:S.chat,name:'',cur:true},T=null,RR='',NR=null,step='';
+  const finish=v=>{ov.remove();res(v)};
+  const show=h=>{bx.innerHTML=h;bx.scrollTop=0};
+  const head=(t,back)=>`<div style="display:flex;align-items:center;gap:8px;margin:2px 0 8px"><div style="flex:1;font-size:16px;font-weight:700">${t}</div>${back?'<button data-a="back">Назад</button>':''}<button data-a="x">Отмена</button></div>`;
+  const row=(a,i,t,on)=>`<button class="pk${on?' on':''}" data-a="${a}" data-i="${i}">${t}</button>`;
+  const dlabel=()=>(D.cur?'Эта директория':D.name||'Основная')+(D.cur&&D.name?' ('+D.name+')':'');
+  const stepDirs=async()=>{
+    step='dirs';show(head('Куда: директория',0)+'<div class="us" style="padding:8px">Загружаю список…</div>');
+    if(!dirs){try{dirs=await dirList()}catch(e){dirs=[]}}
+    if(dirs.length<2){D={id:S.chat,name:'',cur:true};T={cur:true,idx:curIndex()};return stepRepos()}
+    show(head('Куда: директория',0)+dirs.map((d,i)=>{const c=String(d.id)===String(S.chat);return row('dir',i,(c?'● ':'')+esc(d.name||'Основная')+(c?' — эта':''),c)}).join(''));
+  };
+  const stepRepos=()=>{
+    step='repos';
+    const rows=[['','Облако',null]];
+    for(const x of(T.cur?[...T.idx.repos.values()].filter(visRepo):[...T.idx.repos.values()]))rows.push([x.name,x.name,x.enc]);
+    const vis=rows.filter(([r])=>!lockedIn(T,r,''));
+    let h=head('Куда: репозиторий<div class="us" style="font-weight:400">'+esc(dlabel())+'</div>',!!(o.dirStep||dirs));
+    h+=vis.map(([r,n,e],i)=>row('repo',i,(e&&e.on?'🔐 ':'')+esc(n),T.cur&&r===R())).join('');
+    if(!T.cur&&!S.viewer)for(const n of(o.srcRepos||[]))if(n&&!T.idx.repos.has(n))h+=row('same',n,'＋ Создать «'+esc(n)+'» здесь (то же шифрование)');
+    h+=row('newrepo','','＋ Новый репозиторий…');
+    if(!S.viewer&&!o.dirStep)h+=row('dirs','','Другая директория…');
+    show(h);bx._rows=vis;
+  };
+  const stepPaths=()=>{
+    step='paths';
+    let ps=NR?[]:idxPaths(T.idx,RR);
+    ps=ps.filter(p=>!(o.exclude&&T.cur&&RR===o.exclude.r&&inTree(p,o.exclude.p))&&!lockedIn(T,RR,p));
+    bx._paths=['',...ps];
+    let h=head('Куда: папка<div class="us" style="font-weight:400">'+esc(dlabel())+' › '+esc(RR||'Облако')+'</div>',true);
+    h+=bx._paths.map((p,i)=>row('path',i,p?'&nbsp;&nbsp;'.repeat(p.split('/').length-1)+'📁 '+esc(base(p)):'Корень репозитория')).join('');
+    h+=row('newpath','','＋ Новая папка…');
+    show(h);
+  };
+  const choose=p=>finish({dir:D,cur:!!D.cur,idx:T.idx,repo:RR,path:p,newRepo:NR});
+  bx.onclick=async e=>{
+    const b=e.target.closest('[data-a]');if(!b)return;
+    const a=b.dataset.a,i=b.dataset.i;
+    try{
+      if(a==='x')return finish(null);
+      if(a==='back'){if(step==='paths'){NR=null;return stepRepos()}return stepDirs()}
+      if(a==='dirs')return stepDirs();
+      if(a==='dir'){
+        D=dirs[+i];D={...D,cur:String(D.id)===String(S.chat)};
+        if(D.cur){T={cur:true,idx:curIndex()};return stepRepos()}
+        show(head('Читаю директорию…',0));
+        try{T={cur:false,idx:await dirIndex(D.id)}}catch(x){alert('Не удалось прочитать директорию: '+err(x));return stepDirs()}
+        return stepRepos();
+      }
+      if(a==='repo'){RR=bx._rows[+i][0];NR=null;return stepPaths()}
+      if(a==='same'){RR=i;NR={name:i,mode:'same'};return stepPaths()}
+      if(a==='newrepo'){
+        const n=clean(await uiPrompt('Название нового репозитория')||'');if(!n)return;
+        if(n==='Облако'||T.idx.repos.has(n)){alert('Такой репозиторий уже есть');return}
+        RR=n;NR={name:n,mode:'new'};return stepPaths();
+      }
+      if(a==='path')return choose(bx._paths[+i]);
+      if(a==='newpath'){
+        const n=(await uiPrompt('Название новой папки (можно вложенную: Учёба/Латынь)')||'').split('/').map(clean).filter(Boolean).join('/');
+        if(n)return choose(n);
+      }
+    }catch(x){alert(err(x))}
+  };
+  ov.onclick=e=>{if(e.target===ov)finish(null)};
+  if(o.dirStep&&!S.viewer)stepDirs();
+  else{T={cur:true,idx:curIndex()};stepRepos()}
+})}
+
+/* ---- сам перенос ---- */
+async function startXfer(o){
+  if(XF.on){alert('Перенос уже идёт. Дождитесь окончания.');return null}
+  if(typeof U!=='undefined'&&U.on){alert('Сейчас идёт загрузка файлов. Дождитесь окончания, потом переносите.');return null}
+  if(OFFLINE){alert('Нет связи с Telegram: перенос недоступен офлайн.');return null}
+  let items,mk=[],lk=[],old,rr=R();
+  if(o.folder!==undefined){
+    old=o.folder;
+    items=files.filter(f=>f.repo===rr&&inTree(f.path,old)).sort((a,b)=>a.no-b.no);
+    mk=folders.filter(x=>x.repo===rr&&inTree(x.path,old));
+    lk=locks.filter(l=>l.r===rr&&l.p&&inTree(l.p,old));
+  }else items=(o.files||[]).filter(Boolean);
+  if(!items.length&&o.folder===undefined)return null;
+  const tgt=await pickTarget({dirStep:!!o.dirStep&&!S.viewer,srcRepos:[...new Set(items.map(f=>f.repo).filter(Boolean))],exclude:o.folder!==undefined?{r:rr,p:old}:null});
+  if(!tgt)return null;
+  try{return await runXfer({move:o.move!==false,items,mk,lk,old,rr,isFolder:o.folder!==undefined},tgt)}
+  catch(x){say(err(x),1);try{await refresh()}catch(e){}render();return null}
+}
+async function runXfer(o,tgt){
+  const{move,items,mk,lk,old,rr,isFolder}=o;
+  const sameDir=!!tgt.cur,tid=tgt.dir.id,trepo=tgt.repo,idx=tgt.idx,dname=sameDir?'эта директория':(tgt.dir.name||'другая директория');
+  const tmpath=isFolder?(tgt.path?tgt.path+'/':'')+base(old):tgt.path;
+  const dp=f=>isFolder?tmpath+f.path.slice(old.length):tgt.path;
+  if(isFolder){
+    if(sameDir&&trepo===rr&&inTree(tgt.path,old)){alert('Папку нельзя перенести внутрь самой себя.');return null}
+    if(!tgt.newRepo&&idxPaths(idx,trepo).includes(tmpath)){alert('В выбранном месте уже есть папка с таким названием. Переименуйте одну из них.');return null}
+  }
+  if(items.some(f=>f.enc)&&!hasCrypto()){alert('Шифрование недоступно: при таком способе открытия приложения браузер не даёт доступ к криптографии. Откройте приложение с хостинга по https.');return null}
+  /* 1. ключи исходных репозиториев */
+  for(const sr of new Set(items.filter(f=>f.enc).map(f=>f.repo))){
+    if(!await ensureKey(sr)){say('Перенос отменён: нужен пароль шифрования «'+sr+'»',1);return null}
+  }
+  /* 2. что за репозиторий назначения и нужно ли шифровать */
+  let tmeta=null,tguest=false,towner='';
+  const nm=tgt.newRepo?tgt.newRepo.mode:'';
+  if(nm==='same'){const sx=repos.find(q=>q.name===trepo);tmeta=sx?sx.enc:null;tguest=!!(sx&&sx.guest);towner=sx?sx.owner:''}
+  else if(!nm&&trepo){const x=idx.repos.get(trepo);tmeta=x?x.enc:null}
+  const dstOn=nm==='new'?true:!!(tmeta&&tmeta.on);
+  if(dstOn&&!hasCrypto()){alert('Шифрование недоступно: при таком способе открытия приложения браузер не даёт доступ к криптографии. Откройте приложение с хостинга по https.');return null}
+  const sk=new Set();
+  if(dstOn&&tmeta)for(const sr of new Set(items.map(f=>f.repo).filter(Boolean)))if(KEYS[sr]&&await sameFileKey(KEYS[sr],tmeta))sk.add(sr);
+  /* 3. способ для каждого файла: edit (только подпись), fid (копия по file_id), re (скачать → перешифровать → загрузить) */
+  const strat=f=>{
+    if(sameDir&&f.repo===trepo)return move?'edit':'fid';
+    const keep=(!f.enc&&!dstOn)||(dstOn&&sk.has(f.repo));
+    return keep?(sameDir&&move?'edit':'fid'):'re';
+  };
+  const plan=items.map(f=>({f,s:strat(f)})).filter(p=>!(p.s==='edit'&&p.f.path===dp(p.f)&&p.f.repo===trepo));
+  const nDec=plan.filter(p=>p.s==='re'&&p.f.enc&&!dstOn).length,nEnc=plan.filter(p=>p.s==='re'&&!p.f.enc&&dstOn).length,nKey=plan.filter(p=>p.s==='re'&&p.f.enc&&dstOn).length,nRe=plan.filter(p=>p.s==='re').length;
+  if(!plan.length&&!(isFolder&&(mk.length||lk.length))){say('Нечего переносить: файлы уже там');return{ok:0,total:0,bad:0}}
+  /* 4. подтверждение */
+  let msg=`${move?'Перенести':'Копировать'}: файлов — ${plan.length}${isFolder?', папка «'+base(old)+'»':''}\nКуда: ${dname} › ${trepo||'Облако'}${tgt.path?' › '+tgt.path:''}`;
+  if(nm==='same')msg+=`\n\nВ директории будет создан репозиторий «${trepo}» с тем же шифрованием.`;
+  if(nm==='new')msg+=`\n\nБудет создан новый репозиторий «${trepo}» с новым паролем шифрования.`;
+  if(nEnc)msg+=`\n\n🔐 Зашифруем ключом репозитория «${trepo}»: ${nEnc}.`;
+  if(nKey)msg+=`\n\n🔁 Перешифруем под пароль «${trepo}»: ${nKey}.`;
+  if(nDec)msg+=`\n\n⚠ Расшифруем: ${nDec}. В «${trepo||'Облако'}» шифрования нет — эти файлы окажутся в Telegram без защиты.`;
+  if(nRe)msg+=`\n\nТакие файлы скачиваются и загружаются заново: это дольше. Не закрывайте приложение.`;
+  if(move)msg+=`\n\nОригинал удаляется только после проверки копии.`;
+  if(!confirm(msg))return null;
+  XF.on=true;keepAwake(true);
+  const bad=[],soft=[],done=[];let needRef=false;
+  try{
+    /* 5. репозиторий назначения (если новый) и ключ */
+    let dstKey=null;
+    if(tgt.newRepo){
+      if(nm==='new'){const ne=await newEncSetup(trepo);if(!ne){say('Перенос отменён');return null}tmeta=ne.enc;dstKey=ne.k}
+      const text=RP+trepo+(tmeta?'\n'+ENC+JSON.stringify(tmeta):'')+(nm==='new'?(sameDir?GOWN():''):(tguest?'\n'+GU+(towner?' '+towner:''):''));
+      const m=await dirFw(()=>client.sendMessage(tid,text));
+      if(sameDir){repos.push({id:m.id,name:trepo,enc:tmeta,guest:nm==='new'?!!S.viewer:tguest,owner:nm==='new'?(S.viewer?S.guestUser||'':''):towner});if(dstKey)KEYS[trepo]=dstKey}
+    }
+    if(dstOn&&!dstKey&&plan.some(p=>p.s==='re')){
+      if(sameDir){if(!await ensureKey(trepo)){say('Перенос отменён: нужен пароль шифрования «'+trepo+'»',1);return null}dstKey=KEYS[trepo]}
+      else{dstKey=await askRepoKey(tgt.dir.name,trepo,tmeta);if(!dstKey){say('Перенос отменён: нужен пароль шифрования «'+trepo+'»',1);return null}}
+    }
+    /* 6. папки назначения (включая пустые) и пароли папок */
+    const need=new Set(),anc=p=>{let a='';for(const g of(p||'').split('/')){if(!g)continue;a=a?a+'/'+g:g;need.add(a)}};
+    if(isFolder){anc(tmpath);for(const x of mk)anc(tmpath+x.path.slice(old.length))}else anc(tgt.path);
+    for(const p of plan)anc(dp(p.f));
+    const have=new Set(idx.fo.filter(x=>x.r===trepo).map(x=>x.p));
+    for(const p of need){
+      if(have.has(p))continue;
+      const m=await dirFw(()=>client.sendMessage(tid,(trepo?RP+trepo+'\n':'')+FP+p));
+      if(sameDir)folders.push({id:m.id,path:p,repo:trepo});
+    }
+    for(const l of lk){
+      const np2=tmpath+l.p.slice(old.length);
+      const m=await dirFw(()=>client.sendMessage(tid,LK+JSON.stringify({r:trepo,p:np2,h:l.h})));
+      if(sameDir){locks.push({id:m.id,r:trepo,p:np2,h:l.h});unAdd(trepo+'\n'+np2,l.h)}
+    }
+    /* 7. файлы */
+    let no=sameDir?await maxNoSync():idx.no,i=0;
+    for(const{f,s}of plan){
+      i++;const shown=f.enc?'зашифрованный файл':f.name;
+      say(`${move?'Переношу':'Копирую'} ${i} из ${plan.length}: ${shown}`);
+      try{
+        const D2=dp(f);
+        if(s==='edit'){
+          await dirFw(()=>client.editMessageCaption(S.chat,f.id,{caption:caption(f.no,D2,capName(f),trepo)}));
+          f.path=D2;f.repo=trepo;done.push(f);
+        }else{
+          const myNo=++no;let r,en;
+          if(s==='fid'){
+            r=await dirFw(()=>client.sendDocument(tid,f.fid,{caption:caption(myNo,D2,capName(f),trepo),fileName:f.enc?'enc'+myNo+'.bin':f.name}));
+            en=entry(r);
+            if(en&&f.size&&en.size&&en.size!==f.size){try{await withChat(()=>client.deleteMessages(tid,[r.id]))}catch(e){}throw new Error('Размер копии не совпал с оригиналом')}
+          }else{
+            if(f.size>3e8)throw new Error('Файл больше 300 МБ: перешифровать нельзя');
+            const pm=f.enc?await plainMeta(f):{name:f.name,mime:f.mime};
+            const raw=await dlRaw(f,false);
+            if(f.size&&raw.n!==f.size)throw new Error('Файл скачался не полностью');
+            const blob=f.enc?await decBlobK(KEYS[f.repo],raw.parts,pm.mime):new Blob(raw.parts,{type:f.mime});
+            let data,cname,fname;
+            if(dstOn){data=await encBytesK(dstKey,blob);cname='🔐'+await encNameK(dstKey,pm.name,pm.mime);fname='enc'+myNo+'.bin'}
+            else{data=new Uint8Array(await blob.arrayBuffer());cname=pm.name;fname=pm.name}
+            const plainLen=blob.size,heavy=data.length>1.5e8,h0=(!dstOn&&!heavy)?await shaHex(data):'',cap=caption(myNo,D2,cname,trepo);
+            r=await dirFw(()=>client.sendDocument(tid,data,{caption:cap,fileName:fname}));
+            en=entry(r);let okv=false;
+            try{
+              if(!en||en.size!==data.length)throw new Error('Telegram принял файл не полностью');
+              const back=await dlRaw({...en},false);
+              if(back.n!==data.length)throw new Error('Копия скачалась не полностью');
+              if(dstOn){const pb=await decBlobK(dstKey,back.parts,'application/octet-stream');if(pb.size!==plainLen)throw new Error('Проверка расшифровкой не прошла')}
+              else if(!heavy){if(await shaHex(new Uint8Array(await new Blob(back.parts).arrayBuffer()))!==h0)throw new Error('Контрольная сумма копии не совпала')}
+              okv=true;
+            }finally{if(!okv){try{await withChat(()=>client.deleteMessages(tid,[r.id]))}catch(e){}}}
+          }
+          if(!en)needRef=true;
+          if(sameDir&&en){if(!en.no)en.no=myNo;files.push(en)}
+          done.push(f);
+          if(move){
+            try{await dirFw(()=>client.deleteMessages(S.chat,[f.id]));files=files.filter(x=>x.id!==f.id);C.delete(f.id)}
+            catch(x){soft.push(shown+': копия создана, а оригинал удалить не удалось ('+err(x)+')')}
+          }
+        }
+      }catch(x){bad.push({f,n:shown,e:err(x)})}
+      await sleep(300);
+    }
+    /* 8. старые папки и их пароли — только если всё перенесено */
+    if(isFolder&&move&&!bad.length){
+      const ids=[...mk,...lk].map(x=>x.id);
+      try{for(let k=0;k<ids.length;k+=100)await withChat(()=>client.deleteMessages(S.chat,ids.slice(k,k+100)));folders=folders.filter(x=>!mk.includes(x));locks=locks.filter(l=>!lk.includes(l))}
+      catch(x){soft.push('Старая пустая папка не удалена: '+err(x))}
+    }
+    if(needRef){try{await refresh()}catch(e){}}
+    if(sameDir&&isFolder){P.repo=trepo;sv('tgmp',P);cur=tmpath}
+    else if(cur&&!allPaths().includes(cur))cur='';
+    saveIndex();
+    jlog(move?'mv':'cp',done.length+' ф. → '+dname+' / '+(trepo||'Облако')+(tmpath?' / '+tmpath:''));
+    exitSel();
+    say(`${move?'Перенесено':'Скопировано'}: ${done.length} из ${plan.length}`+(bad.length?`. Не удалось: ${bad.length}`:''),!!bad.length);
+    if(bad.length||soft.length)alert((bad.length?`Не перенесено (остались на месте): ${bad.length}\n`+bad.slice(0,6).map(b=>'• '+b.n+' — '+b.e).join('\n')+(bad.length>6?'\n…':''):'')+(soft.length?'\n\n'+soft.slice(0,4).join('\n'):''));
+    return{ok:done.length,total:plan.length,bad:bad.length};
+  }finally{XF.on=false;keepAwake(false)}
+}
+const selFiles=()=>[...sel].map(id=>files.find(x=>x.id===id)).filter(Boolean);
+$('#smv').onclick=()=>{if(!sel.size)return;if(S.viewer){pickMode='batch';openPick(null)}else startXfer({files:selFiles(),move:true,dirStep:true})};
+$('#sdir').onclick=()=>{if(S.viewer||!sel.size)return;startXfer({files:selFiles(),move:true,dirStep:true})};
+$('#mvf').onclick=()=>{if(S.viewer){pickMode='folder';openPick(null)}else startXfer({folder:cur,move:true,dirStep:true})};
+$('#cpf').onclick=()=>{if(S.viewer){pickMode='fcopy';openPick(null)}else startXfer({folder:cur,move:false,dirStep:true})};
+/*XFER-END*/
 
 
 /* зашифрованные файлы привязаны к ключу своего репозитория */
@@ -3043,7 +3329,6 @@ async function copyFolder(np,nr){
   }catch(x){say(err(x),1);try{await refresh()}catch(e){}render()}
 }
 $('#rnf').onclick=async()=>{const n=clean(await uiPrompt('Новое имя папки',base(cur))||'');if(!n||n===base(cur))return;moveFolder(parentPath(cur),R(),n)};
-$('#cpf').onclick=()=>{pickMode='fcopy';openPick(null)};
 function openPick(cp){
   const out=[];
   for(const r of['',...repos.filter(visRepo).map(x=>x.name)]){
@@ -3290,7 +3575,8 @@ $('#vmenu').onclick=async e=>{
   const a=e.target.dataset.a;if(!a)return;
   $('#vmenu').hidden=true;const f=curFile();if(!f)return;
   if(a==='info')alert(`${f.name}\nПапка: ${f.path||'Корень'}\nРазмер: ${size(f.size)}\nДата: ${new Date(f.date).toLocaleString('ru')}`);
-  if(a==='mv'){pickMode='one';openPick(f.path)}
+  if(a==='mv'&&S.viewer){pickMode='one';openPick(f.path)}
+  if(a==='mv'&&!S.viewer){const r0=await startXfer({files:[f],move:true,dirStep:false});if(r0&&r0.ok){const g=files.find(x=>x.id===f.id);if(!g||!$('#q').value||g.repo!==R())dropCur()}}
   if(a==='rn'){
     const n=(await uiPrompt('Новое название файла',f.name)||'').replace(/[\r\n]+/g,' ').trim();
     if(!n||n===f.name)return;
