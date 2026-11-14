@@ -554,6 +554,7 @@ body.pl-on .fab{bottom:calc(176px + env(safe-area-inset-bottom))}
   <input id="q" type="search" placeholder="Поиск по всему архиву">
   <div class="sec secrow"><span>Репозиториум</span><button id="addrepo" aria-label="Новый репозиторий" data-ic="plus"></button></div>
   <div id="repl"></div>
+  <div class="dgrp" id="whoami" hidden></div>
   <div class="sec" id="dsec" hidden>Директории</div>
   <div id="dirl"></div>
   <div id="rbar"><button id="rsw" role="switch" aria-checked="false"><span>Все пользователи</span><span class="tg"></span></button></div>
@@ -790,7 +791,7 @@ let ANN=[],CVRM=[];let SHARES=[];
 const repoGuest=r=>{const x=r&&repos.find(q=>q.name===r);return !!(x&&x.guest&&(!x.owner||x.owner===S.guestUser))};
 const visRepo=x=>!S.viewer||!x.guest||!x.owner||x.owner===S.guestUser;
 const mineRepo=x=>S.viewer?!!(x.guest&&(!x.owner||x.owner===S.guestUser)):!x.guest;
-const showRepo=x=>!!P.all||mineRepo(x);
+const showRepo=x=>!!x.shared||!!P.all||mineRepo(x);
 const GOWN=()=>(S.viewer&&S.guestUser?'\n'+GU+' '+S.guestUser:S.viewer?'\n'+GU:'');
 const canPw=r=>!S.viewer||repoGuest(r);
 const noDel=r=>!!S.viewer&&locks.some(l=>l.r===r);
@@ -925,6 +926,7 @@ async function toggleLock(r,p){
 }
 function drawRepos(){
   {const cb=$('#conb');if(cb){cb.hidden=!isAdmin();cb.style.display=isAdmin()?'':'none'}}
+  try{const w=$('#whoami');w.hidden=!S.guestUser;w.textContent=S.guestUser?'Вы вошли как: '+S.guestUser:''}catch(e){}
   try{const p=shPending(),b=$('#shb');b.hidden=!p.length;if(p.length)b.lastChild.textContent='Запрос доступа ('+p.length+')'}catch(e){}
   document.body.classList.toggle('own',isAdmin());
   $('#rsw').setAttribute('aria-checked',String(!!P.all));
@@ -1043,7 +1045,9 @@ const shName=s=>shVn(s,s.r);
 const shK=s=>(parseInt(String(s.i),36)%97)+1;
 const shCore=s=>({i:s.i,r:s.r||'',all:s.all?1:0,d:s.d,dn:s.dn,to:s.to,st:s.st,t:s.t,e:s.e?1:0});
 const SHC=new Map(),SHLATER=new Set();
-const shPending=()=>S.viewer?SHARES.filter(x=>x.to===S.guestUser&&x.st==='wait'):[];
+const shMe=()=>String(S.guestUser||'').trim().toLowerCase();
+const shMine=x=>!!shMe()&&String(x.to||'').trim().toLowerCase()===shMe();
+const shPending=()=>SHARES.filter(x=>shMine(x)&&x.st==='wait');
 /* смена статуса: новое сообщение, старое удаляется */
 /* актуальная запись о доступе: null — администратор её удалил (отозвал), undefined — не удалось проверить */
 async function shCheck(s){
@@ -1095,8 +1099,8 @@ async function shScan(sh){
 /* подключаем принятые репозитории к общему списку (кэш на минуту, чтобы не читать чужие каналы при каждом обновлении) */
 async function loadShares(force){
   files=files.filter(f=>!f.shared);repos=repos.filter(x=>!x.shared);folders=folders.filter(x=>!x.shared);locks=locks.filter(l=>!l.shared);
-  if(!S.viewer||OFFLINE||!client)return;
-  for(const sh of SHARES.filter(x=>x.to===S.guestUser&&x.st==='ok')){
+  if(!S.guestUser||OFFLINE||!client)return;
+  for(const sh of SHARES.filter(x=>shMine(x)&&x.st==='ok')){
     let ix=SHC.get(sh.i);
     if(!ix||force||Date.now()-ix.t>6e4){try{ix=await shScan(sh);ix.t=Date.now();SHC.set(sh.i,ix)}catch(e){if(!ix)continue}}
     if(!ix.found)continue;
@@ -1137,7 +1141,7 @@ function shPage(sh){
 $('#shb').onclick=()=>{const p=shPending();if(p.length){SHLATER.delete(p[0].i);shPage(p[0])}};
 /* отказаться от уже принятого доступа (из меню репозитория) */
 async function shLeave(r){
-  const x=repos.find(q=>q.name===r&&q.shared),sh=x&&SHARES.find(s=>s.to===S.guestUser&&s.st==='ok'&&s.i===x.sh);if(!sh)return;
+  const x=repos.find(q=>q.name===r&&q.shared),sh=x&&SHARES.find(s=>shMine(s)&&s.st==='ok'&&s.i===x.sh);if(!sh)return;
   const nm=sh.all?'директории «'+sh.dn+'»':'«'+sh.r+'»';
   if(!confirm('Отказаться от доступа к '+nm+'? Файлы у вас пропадут, администратор сможет предложить доступ снова.'))return;
   try{await shSet(sh,'no','ok')}catch(x){if(!x.gone)throw x;shDrop(sh)}
