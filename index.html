@@ -3125,6 +3125,14 @@ function pickTarget(o){return new Promise(res=>{
   else{T={cur:true,idx:curIndex()};stepRepos()}
 })}
 
+/* Telegram не всегда возвращает полную запись о только что загруженном файле — тогда ищем его в канале по номеру */
+async function findSent(tid,no,repo,path){
+  for(let k=0;k<4;k++){
+    try{const b=await withChat(()=>client.getHistory(tid,{limit:40}));for(const m of b){const e=entry(m);if(e&&e.no===no&&e.repo===(repo||'')&&(e.path||'')===(path||''))return e}}catch(x){}
+    await sleep(1500);
+  }
+  return null;
+}
 /* ---- сам перенос ---- */
 async function startXfer(o){
   if(XF.on){alert('Перенос уже идёт. Дождитесь окончания.');return null}
@@ -3230,8 +3238,8 @@ async function runXfer(o,tgt){
           const myNo=++no;let r,en;
           if(s==='fid'){
             r=await dirFw(()=>client.sendDocument(tid,f.fid,{caption:caption(myNo,D2,capName(f),trepo),fileName:f.enc?'enc'+myNo+'.bin':f.name}));
-            en=entry(r);
-            if(en&&f.size&&en.size&&en.size!==f.size){try{await withChat(()=>client.deleteMessages(tid,[r.id]))}catch(e){}throw new Error('Размер копии не совпал с оригиналом')}
+            en=entry(r)||await findSent(tid,myNo,trepo,D2);
+            if(en&&f.size&&en.size&&en.size!==f.size){try{await withChat(()=>client.deleteMessages(tid,[en.id]))}catch(e){}throw new Error('Размер копии не совпал с оригиналом')}
           }else{
             if(f.size>3e8)throw new Error('Файл больше 300 МБ: перешифровать нельзя');
             const pm=f.enc?await plainMeta(f):{name:f.name,mime:f.mime};
@@ -3243,15 +3251,16 @@ async function runXfer(o,tgt){
             else{data=new Uint8Array(await blob.arrayBuffer());cname=pm.name;fname=pm.name}
             const plainLen=blob.size,heavy=data.length>1.5e8,h0=(!dstOn&&!heavy)?await shaHex(data):'',cap=caption(myNo,D2,cname,trepo);
             r=await dirFw(()=>client.sendDocument(tid,data,{caption:cap,fileName:fname}));
-            en=entry(r);let okv=false;
+            en=entry(r)||await findSent(tid,myNo,trepo,D2);let okv=false;
             try{
-              if(!en||en.size!==data.length)throw new Error('Telegram принял файл не полностью');
+              if(!en)throw new Error('Загруженный файл не найден в канале');
+              if(en.size&&en.size!==data.length)throw new Error('Telegram принял файл не полностью');
               const back=await dlRaw({...en},false);
               if(back.n!==data.length)throw new Error('Копия скачалась не полностью');
               if(dstOn){const pb=await decBlobK(dstKey,back.parts,'application/octet-stream');if(pb.size!==plainLen)throw new Error('Проверка расшифровкой не прошла')}
               else if(!heavy){if(await shaHex(new Uint8Array(await new Blob(back.parts).arrayBuffer()))!==h0)throw new Error('Контрольная сумма копии не совпала')}
               okv=true;
-            }finally{if(!okv){try{await withChat(()=>client.deleteMessages(tid,[r.id]))}catch(e){}}}
+            }finally{if(!okv){try{await withChat(()=>client.deleteMessages(tid,[(en&&en.id)||r.id]))}catch(e){}}}
           }
           if(!en)needRef=true;
           if(sameDir&&en){if(!en.no)en.no=myNo;files.push(en)}
